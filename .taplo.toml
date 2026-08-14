@@ -1,5 +1,4 @@
 [formatting]
-# cspell: disable-next-line
 # compatibility between toml-sort-fix pre-commit hook and panekj.even-betterer-toml extension
 align_comments = false
 array_trailing_comma = false

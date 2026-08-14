@@ -17,13 +17,6 @@ repos:
     rev: v2.0.0
     hooks:
       - id: doc8
-  - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v9.2.0
-    hooks:
-      - id: cspell
-        name: cspell
-        # entry: codespell --relative
-        args: [--relative, --no-progress, --no-summary]
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
     hooks:

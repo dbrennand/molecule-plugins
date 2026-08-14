@@ -1,5 +1,4 @@
 #!/bin/bash
-# cspell:ignore losetup enablerepo relver releasever byacc disablerepo epel nodeps libk
 set -euxo pipefail
 # Used by Zuul CI to perform extra bootstrapping
 

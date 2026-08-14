@@ -93,7 +93,6 @@ Examples
      - name: kali
        image_owner: aws-marketplace
        image_filters:
-        # cspell:ignore rkojcm
          product-code: 89bab4k3h9x4rkojcm2tj8j4l
      - name: RHEL8
        image_owner: 309956199498  # Redhat
