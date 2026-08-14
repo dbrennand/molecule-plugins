@@ -1,5 +1,3 @@
-# cspell: ignore NOCOWS PYTHONDONTWRITEBYTECODE
-
 [build-system]
 requires = [
   "setuptools >= 77.0.0", # required by pyproject+setuptools_scm integration
@@ -130,8 +128,6 @@ norecursedirs = ["dist", "doc", "build", ".tox", ".eggs", "src", "test/*/scenari
 
 [tool.ruff]
 target-version = "py39"
-# Same as Black.
-line-length = 88
 lint.ignore = [
   "E501", # we use black
   # we deliberately ignore these:
