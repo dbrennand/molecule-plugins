@@ -30,7 +30,7 @@ p.write_text(c)
 	-e 's!min_ansible_version:.*!min_ansible_version: "2.1"!g' \
 	-e 's!license:.*!license: MIT!g' \
 	-i.backup meta/main.yml
-  # Not sure if the issue is in molecule or ansible-lint or pre-commit ansible-lint hook
+  # Not sure if the issue is in molecule or ansible-lint or prek ansible-lint hook
   # As a workaround, kill the offending files.
   rm -rf tests
   cd ..

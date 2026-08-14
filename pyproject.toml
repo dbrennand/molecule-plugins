@@ -19,8 +19,7 @@ docker = [
 ]
 lint = [
   "molecule>=25.7.0",
-  "pre-commit>=4.1",
-  "pre-commit-uv>=4.1.4",
+  "prek>=0.4.13",
   "toml>=0.10.2"
 ]
 pkg = [
@@ -197,7 +196,7 @@ runner = "uv-venv-lock-runner"
 skip_install = false
 commands_pre = []
 commands = [
-  ["pre-commit", "run", "-a"],
+  ["prek", "run", "-a"],
   ["bash", "{tox_root}/tools/generate-templates.sh"],
   ["rm", "-rf", "test/roles"]
 ]
