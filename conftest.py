@@ -27,7 +27,7 @@ def _rebake_command(cmd, env, out=LOG.info, err=LOG.error):
     return cmd.bake(_env=env, _out=out, _err=err)
 
 
-@pytest.fixture()
+@pytest.fixture
 def random_string(length=5):
     return "".join(random.choice(string.ascii_uppercase) for _ in range(length))
 
@@ -40,7 +40,7 @@ def change_dir_to(dir_name):
     os.chdir(cwd)
 
 
-@pytest.fixture()
+@pytest.fixture
 def temp_dir(tmpdir, random_string, request):
     directory = tmpdir.mkdir(random_string)
 
@@ -48,7 +48,7 @@ def temp_dir(tmpdir, random_string, request):
         yield directory
 
 
-@pytest.fixture()
+@pytest.fixture
 def resources_folder_path():
     resources_folder_path = os.path.join(os.path.dirname(__file__), "resources")
     return resources_folder_path

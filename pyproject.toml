@@ -20,6 +20,7 @@ docker = [
 lint = [
   "molecule>=25.7.0",
   "prek>=0.4.13",
+  "ruff==0.12.12",
   "toml>=0.10.2"
 ]
 pkg = [
@@ -128,34 +129,49 @@ norecursedirs = ["dist", "doc", "build", ".tox", ".eggs", "src", "test/*/scenari
 [tool.ruff]
 target-version = "py39"
 lint.ignore = [
-  "E501", # we use black
-  # we deliberately ignore these:
+  # Long comments, synchronization text, and Jinja/Vagrant strings remain after formatting.
+  "E501",
+  # Exception-message refactoring is a separate localized increment.
   "EM102",
-  # temporary disabled until we either fix them or decide to ignore them:
-  "A001",
+  # Broad annotation changes require meaningful API and test review.
   "ANN",
+  # Unused framework callback and driver arguments need context-specific review.
   "ARG",
+  # The mutable default in the Docker filter needs a focused behavior check.
   "B006",
+  # Add an explicit warning stacklevel in a later small increment.
   "B028",
+  # Broad exception handling needs backend-failure analysis.
   "BLE",
+  # The Docker filter refactor overlaps with B006 and needs separate review.
   "C901",
+  # Formatter ownership makes this a low-value duplicate policy.
   "COM812",
+  # The docstring migration is a separate project-wide change.
   "D",
+  # Timezone semantics require a separate domain decision.
   "DTZ",
+  # This pytest/helper boolean API may affect callers if made keyword-only.
   "FBT",
+  # Adding package markers could alter Molecule, Ansible, or test imports.
   "INP",
+  # Explicit string concatenation cleanup is a separate low-risk increment.
   "ISC",
+  # External/API names, fixtures, and the test layout need to retain their conventions.
   "N",
+  # Exception handling inside polling loops is likely intentional.
   "PERF203",
+  # Generic noqa cleanup requires review of the underlying import findings.
   "PGH",
+  # Magic values in Windows-auth and Molecule tests need domain review.
   "PLR",
-  "PT",
+  # Path migration risks changing str/Path boundaries in Molecule APIs.
   "PTH",
+  # These return/control-flow findings require focused semantic review.
   "RET",
+  # Assertions, temporary paths, non-cryptographic randomness, and executable names are intentional here.
   "S",
-  # not sure we'll open a bug for every TODO.
-  "TD003",
-  "FIX002",
+  # Exception-style migration needs focused review and overlaps with EM102.
   "TRY"
 ]
 lint.select = ["ALL"]

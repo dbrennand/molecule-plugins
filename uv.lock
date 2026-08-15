@@ -1125,6 +1125,7 @@ docker = [
 lint = [
   {name = "molecule"},
   {name = "prek"},
+  {name = "ruff"},
   {name = "toml"}
 ]
 pkg = [
@@ -1165,6 +1166,7 @@ docker = [
 lint = [
   {name = "molecule", specifier = ">=25.7.0"},
   {name = "prek", specifier = ">=0.4.13"},
+  {name = "ruff", specifier = "==0.12.12"},
   {name = "toml", specifier = ">=0.10.2"}
 ]
 pkg = [
