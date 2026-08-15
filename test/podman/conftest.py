@@ -14,7 +14,7 @@ def pytest_collection_finish(session):
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def driver_name() -> str:
     """Return name of the driver to be tested."""
     return "podman"
