@@ -2,6 +2,7 @@ collections:
   - name: ansible.posix # docker
     version: ">=1.4.0" # keep in sync with src/molecule_plugins/docker/driver.py and src/molecule_plugins/containers/driver.py
   - name: google.cloud
+    version: ">=1.0.2" # keep in sync with src/molecule_plugins/gce/driver.py
   - name: amazon.aws
   - name: community.docker
     version: ">=3.10.2" # keep in sync with src/molecule_plugins/docker/driver.py and src/molecule_plugins/containers/driver.py
@@ -13,3 +14,4 @@ collections:
     version: ">=1.8.0"
   - name: community.vagrant
   - name: openstack.cloud
+    version: ">=2.1.0" # keep in sync with src/molecule_plugins/openstack/driver.py

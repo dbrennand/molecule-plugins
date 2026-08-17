@@ -1,0 +1,184 @@
+---
+name: Provider integration
+
+on:
+  workflow_dispatch:
+    inputs:
+      driver:
+        description: Provider integration to run
+        required: true
+        default: all
+        type: choice
+        options: [all, azure, ec2, gce, openstack]
+
+concurrency:
+  group: provider-integration-${{ github.event.inputs.driver }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: "1"
+  PY_COLORS: "1"
+
+jobs:
+  azure:
+    if: inputs.driver == 'all' || inputs.driver == 'azure'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    environment: azure-integration
+    env:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_SECRET: ${{ secrets.AZURE_SECRET }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_TENANT: ${{ secrets.AZURE_TENANT }}
+      AZURE_REGION: ${{ vars.AZURE_REGION }}
+      MOLECULE_AZURE_RESOURCE_GROUP: molecule-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install project, collections, and Azure SDK requirements
+        run: |
+          uv sync --locked --all-extras
+          uv run ansible-galaxy collection install -r requirements.yml
+          uv pip install --python .venv/bin/python \
+            --requirement "$HOME/.ansible/collections/ansible_collections/azure/azcollection/requirements.txt"
+      - name: Run Azure integration
+        run: >-
+          uv run --locked --all-extras
+          pytest tests/integration/azure -m provider --require-integration
+          --junitxml=junit-azure.xml
+      - name: Upload Azure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-azure
+          path: junit-azure.xml
+
+  ec2:
+    if: inputs.driver == 'all' || inputs.driver == 'ec2'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    environment: ec2-integration
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_IMAGE_ID: ${{ vars.AWS_IMAGE_ID }}
+      AWS_INSTANCE_TYPE: ${{ vars.AWS_INSTANCE_TYPE }}
+      AWS_VPC_SUBNET_ID: ${{ vars.AWS_VPC_SUBNET_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install project and collections
+        run: |
+          uv sync --locked --all-extras
+          uv run ansible-galaxy collection install -r requirements.yml
+      - name: Run EC2 integration
+        run: >-
+          uv run --locked --all-extras
+          pytest tests/integration/ec2 -m provider --require-integration
+          --junitxml=junit-ec2.xml
+      - name: Upload EC2 report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-ec2
+          path: junit-ec2.xml
+
+  gce:
+    if: inputs.driver == 'all' || inputs.driver == 'gce'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    environment: gce-integration
+    env:
+      GCE_PROJECT_ID: ${{ vars.GCE_PROJECT_ID }}
+      GCE_REGION: ${{ vars.GCE_REGION }}
+      GCP_AUTH_KIND: serviceaccount
+      GCP_SERVICE_ACCOUNT_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+      GCP_SERVICE_ACCOUNT_FILE: /tmp/gcp-service-account.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Materialize the protected service-account file
+        run: install -m 600 /dev/null "$GCP_SERVICE_ACCOUNT_FILE" && printf '%s' "$GCP_SERVICE_ACCOUNT_JSON" > "$GCP_SERVICE_ACCOUNT_FILE"
+      - name: Install project and collections
+        run: |
+          uv sync --locked --all-extras
+          uv run ansible-galaxy collection install -r requirements.yml
+      - name: Run GCE integration
+        run: >-
+          uv run --locked --all-extras
+          pytest tests/integration/gce -m provider --require-integration
+          --junitxml=junit-gce.xml
+      - name: Remove the service-account file
+        if: always()
+        run: rm -f "$GCP_SERVICE_ACCOUNT_FILE"
+      - name: Upload GCE report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-gce
+          path: junit-gce.xml
+
+  openstack:
+    if: inputs.driver == 'all' || inputs.driver == 'openstack'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    environment: openstack-integration
+    env:
+      OS_CLOUD: ${{ vars.OS_CLOUD }}
+      OS_CLOUDS_YAML: ${{ secrets.OS_CLOUDS_YAML }}
+      OS_CLIENT_CONFIG_FILE: /tmp/clouds.yaml
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Materialize the protected clouds configuration
+        run: install -m 600 /dev/null "$OS_CLIENT_CONFIG_FILE" && printf '%s' "$OS_CLOUDS_YAML" > "$OS_CLIENT_CONFIG_FILE"
+      - name: Install project and collections
+        run: |
+          uv sync --locked --all-extras
+          uv run ansible-galaxy collection install -r requirements.yml
+      - name: Run OpenStack integration
+        run: >-
+          uv run --locked --all-extras
+          pytest tests/integration/openstack -m provider --require-integration
+          --junitxml=junit-openstack.xml
+      - name: Remove the clouds configuration
+        if: always()
+        run: rm -f "$OS_CLIENT_CONFIG_FILE"
+      - name: Upload OpenStack report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-openstack
+          path: junit-openstack.xml

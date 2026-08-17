@@ -1,0 +1,10 @@
+---
+# Rendered driver templates are temporary standalone Molecule scenario assets.
+offline: true
+skip_list:
+  # Existing templates pass free-form module arguments that are being migrated separately.
+  - args[module]
+  # Preserve the repository's temporary Ansible 2.19 formatting compatibility.
+  - formatting
+mock_modules:
+  - vagrant

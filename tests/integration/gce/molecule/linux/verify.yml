@@ -1,0 +1,8 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Verify that the instance remains reachable
+      ansible.builtin.wait_for_connection:
+        timeout: 60

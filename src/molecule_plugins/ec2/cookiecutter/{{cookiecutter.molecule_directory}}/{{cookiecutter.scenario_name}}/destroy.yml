@@ -142,4 +142,5 @@
           ansible.builtin.copy:
             dest: "{{ molecule_instance_config }}"
             content: "{{ {} | to_yaml }}"
+            mode: "0600"
 {%- endraw %}

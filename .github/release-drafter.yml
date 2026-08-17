@@ -1,3 +1,67 @@
 ---
-# see https://github.com/ansible/team-devtools
-_extends: ansible/team-devtools
+# Repository-owned release-drafter policy.
+name-template: v$RESOLVED_VERSION
+tag-template: v$RESOLVED_VERSION
+change-template: "- $TITLE (#$NUMBER) @$AUTHOR"
+categories:
+  - title: Breaking
+    labels:
+      - breaking
+  - title: Features
+    labels:
+      - feat
+  - title: Fixes
+    labels:
+      - docs
+      - fix
+      - perf
+      - refactor
+  - title: Maintenance
+    labels:
+      - build
+      - chore
+      - ci
+      - style
+      - test
+replacers:
+  - search: /(?:and )?@(pre-commit-ci|dependabot|renovate)(?:\[bot\])?,?/g
+    replace: ""
+version-resolver:
+  minor:
+    labels:
+      - breaking
+      - feat
+  patch:
+    labels:
+      - docs
+      - fix
+      - perf
+      - refactor
+  default: patch
+exclude-contributors:
+  - dependabot
+  - dependabot[bot]
+  - github-actions
+  - github-actions[bot]
+  - pre-commit-ci
+  - pre-commit-ci[bot]
+  - renovate
+  - renovate[bot]
+autolabeler:
+  - label: breaking
+    title:
+      - "^(?:\\[[^\\]]+\\]\\s*)*[a-z]+(\\([^)]+\\))?!:"
+    body:
+      - "/^BREAKING CHANGE: /i"
+  - label: feat
+    title:
+      - /^(?:\[[^\]]+\]\s*)*(feat)(\([^)]+\))?:/i
+  - label: fix
+    title:
+      - /^(?:\[[^\]]+\]\s*)*(fix)(\([^)]+\))?:/i
+  - label: chore
+    title:
+      - /(?:\[[^\]]+\]\s*)*pre-commit autoupdate/i
+      - /^(?:\[[^\]]+\]\s*)*(chore|build|ci|test|style)(\([^)]+\))?:/i
+template: |
+  $CHANGES

@@ -250,7 +250,7 @@
       async: 7200
       poll: 0
 
-    - name: Instance boot block
+    - name: Instance boot block # noqa: no-handler
       when: ec2_instances_async is changed
       block:
         - name: Wait for instance creation to complete

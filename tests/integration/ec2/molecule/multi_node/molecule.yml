@@ -1,0 +1,32 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: ec2
+platforms:
+  - name: instance-1
+    image: ${AWS_IMAGE_ID}
+    instance_type: ${AWS_INSTANCE_TYPE:-t3.micro}
+    vpc_subnet_id: ${AWS_VPC_SUBNET_ID}
+    region: ${AWS_REGION}
+    groups:
+      - foo
+      - bar
+  - name: instance-2
+    image: ${AWS_IMAGE_ID}
+    instance_type: ${AWS_INSTANCE_TYPE:-t3.micro}
+    vpc_subnet_id: ${AWS_VPC_SUBNET_ID}
+    region: ${AWS_REGION}
+    groups:
+      - foo
+      - baz
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      callback_whitelist: profile_roles,profile_tasks,timer
+  playbooks:
+    create: create.yml
+    destroy: destroy.yml
+verifier:
+  name: testinfra

@@ -1,0 +1,26 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Read the short hostname
+      ansible.builtin.command: hostname -s
+      register: molecule_hostname
+      changed_when: false
+
+    - name: Create the Molecule marker directory
+      ansible.builtin.file:
+        path: /etc/molecule
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Write the per-host Molecule marker
+      ansible.builtin.copy:
+        dest: "/etc/molecule/{{ molecule_hostname.stdout }}"
+        content: "managed by molecule-plugins integration tests\n"
+        owner: root
+        group: root
+        mode: "0644"

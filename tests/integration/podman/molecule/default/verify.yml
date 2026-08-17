@@ -1,0 +1,14 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Inspect the operating-system release file
+      ansible.builtin.stat:
+        path: /etc/os-release
+      register: os_release
+
+    - name: Verify that the container exposes operating-system metadata
+      ansible.builtin.assert:
+        that:
+          - os_release.stat.exists

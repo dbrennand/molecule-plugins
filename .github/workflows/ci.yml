@@ -1,0 +1,254 @@
+---
+name: CI
+
+on:
+  merge_group:
+    branches: ["devel", "main"]
+  pull_request:
+    branches: ["devel", "main"]
+  push:
+    branches: ["devel", "main", "releases/**", "stable/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: "1"
+  PY_COLORS: "1"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Run prek hooks
+        run: uv run --locked --no-default-groups --group lint prek run --all-files
+      - name: Check Ruff formatting for the complete Python test tree
+        run: uv run --locked --no-default-groups --group lint ruff format --check tests
+
+  unit:
+    name: Unit / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Run unit tests
+        run: >-
+          uv run --python ${{ matrix.python-version }} --locked
+          --no-default-groups --group dev
+          pytest tests/units
+          --junitxml=junit-unit-${{ matrix.python-version }}.xml
+      - name: Upload unit-test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-unit-${{ matrix.python-version }}
+          path: junit-unit-${{ matrix.python-version }}.xml
+
+  templates:
+    name: Render and lint driver templates
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Ansible collections
+        run: >-
+          uv run --locked --no-default-groups --group dev
+          ansible-galaxy collection install -r requirements.yml
+      - name: Render and lint all packaged templates
+        run: >-
+          uv run --locked --no-default-groups --group dev
+          pytest tests/integration -m template
+          --junitxml=junit-template.xml
+      - name: Upload template-test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-template
+          path: junit-template.xml
+
+  local-runtime:
+    name: Runtime / ${{ matrix.driver }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - driver: docker
+            runtime: docker
+          - driver: podman
+            runtime: podman
+          - driver: containers
+            runtime: podman
+    env:
+      MOLECULE_CONTAINERS_BACKEND: ${{ matrix.runtime }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Podman
+        if: matrix.runtime == 'podman'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes podman
+          podman info
+      - name: Check Docker
+        if: matrix.runtime == 'docker'
+        run: docker info
+      - name: Install Ansible collections
+        run: >-
+          uv run --locked --all-extras --no-default-groups --group dev
+          ansible-galaxy collection install -r requirements.yml
+      - name: Run selected runtime integration
+        run: >-
+          uv run --locked --all-extras --no-default-groups --group dev
+          pytest tests/integration/${{ matrix.driver }}
+          -m runtime --require-integration
+          --junitxml=junit-${{ matrix.driver }}.xml
+      - name: Upload runtime-test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-${{ matrix.driver }}
+          path: junit-${{ matrix.driver }}.xml
+
+  vagrant:
+    name: Runtime / Vagrant and libvirt
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Vagrant and libvirt
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes acl curl gpg libvirt-clients libvirt-daemon-system libvirt-dev qemu-kvm ruby-dev
+          curl --fail --silent --show-error https://apt.releases.hashicorp.com/gpg \
+            | gpg --dearmor \
+            | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg >/dev/null
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(. /etc/os-release && echo "$VERSION_CODENAME") main" \
+            | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt-get update
+          sudo apt-get install --yes vagrant
+          sudo systemctl start libvirtd
+          if [ -e /dev/kvm ]; then sudo setfacl -m "u:$USER:rw" /dev/kvm; fi
+          sudo setfacl -m "u:$USER:rw" /var/run/libvirt/libvirt-sock
+          vagrant plugin install vagrant-libvirt
+          virsh --connect qemu:///system list
+          vagrant plugin list
+      - name: Install Ansible collections
+        run: >-
+          uv run --locked --all-extras --no-default-groups --group dev
+          ansible-galaxy collection install -r requirements.yml
+      - name: Run Vagrant integration
+        run: >-
+          uv run --locked --all-extras --no-default-groups --group dev
+          pytest tests/integration/vagrant
+          -m runtime --require-integration
+          --junitxml=junit-vagrant.xml
+      - name: Upload Vagrant-test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-vagrant
+          path: junit-vagrant.xml
+
+  package:
+    name: Package
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Build distributions
+        run: >-
+          uv run --locked --no-default-groups --group pkg
+          python -m build --outdir dist
+      - name: Validate distributions
+        run: >-
+          uv run --locked --no-default-groups --group pkg
+          python -m twine check --strict dist/*
+      - name: Verify packaged Cookiecutter resources
+        run: >-
+          uv run --locked --no-default-groups --group pkg python -c
+          "import glob, zipfile;
+          wheel=glob.glob('dist/*.whl')[0];
+          names=zipfile.ZipFile(wheel).namelist();
+          configs=[n for n in names if n.endswith('/cookiecutter/cookiecutter.json')];
+          assert len(configs)==8, configs"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+
+  molecule-main:
+    name: Compatibility / Molecule main
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+      - name: Create isolated compatibility environment
+        run: |
+          uv venv --python 3.13 .venv-devel
+          uv pip install --python .venv-devel/bin/python \
+            --editable ".[azure,docker,ec2,gce,openstack,podman,vagrant]" \
+            pytest pytest-testinfra jsonschema \
+            "molecule @ git+https://github.com/ansible-community/molecule.git@main"
+      - name: Run unit tests against Molecule main
+        run: .venv-devel/bin/pytest tests/units

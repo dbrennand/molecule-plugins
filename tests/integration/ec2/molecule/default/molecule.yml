@@ -1,0 +1,18 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: ec2
+platforms:
+  - name: instance
+    image: ${AWS_IMAGE_ID}
+    instance_type: ${AWS_INSTANCE_TYPE:-t3.micro}
+    vpc_subnet_id: ${AWS_VPC_SUBNET_ID}
+    region: ${AWS_REGION}
+provisioner:
+  name: ansible
+  playbooks:
+    create: create.yml
+    destroy: destroy.yml
+verifier:
+  name: testinfra

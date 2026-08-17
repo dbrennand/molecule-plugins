@@ -6,12 +6,12 @@
   gather_facts: false
   no_log: "{{ molecule_no_log }}"
   vars:
-    resource_group_name: molecule
+    resource_group_name: "{{ lookup('env', 'MOLECULE_AZURE_RESOURCE_GROUP') or 'molecule' }}"
     location: "{{ lookup('env', 'AZURE_REGION') or 'westus' }}"
     ssh_user: molecule
     ssh_port: 22
-    virtual_network_name: molecule_vnet
-    subnet_name: molecule_subnet
+    virtual_network_name: "{{ resource_group_name }}_vnet"
+    subnet_name: "{{ resource_group_name }}_subnet"
     keypair_path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/ssh_key"
   tasks:
     - name: Create resource group

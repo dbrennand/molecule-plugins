@@ -53,8 +53,9 @@ repos:
         args: ["--fix"]
         alias: ruff
   - repo: https://github.com/ansible/ansible-lint
-    rev: v25.8.2
+    rev: v26.8.0
     hooks:
       - id: ansible-lint
-        entry: env ANSIBLE_ROLES_PATH="$ANSIBLE_ROLES_PATH:test/roles" ansible-lint
+        entry: env ANSIBLE_LIBRARY=src/molecule_plugins/vagrant/modules ansible-lint
+        additional_dependencies: ["python-vagrant>=1.0.0"]
         args: [--fix]

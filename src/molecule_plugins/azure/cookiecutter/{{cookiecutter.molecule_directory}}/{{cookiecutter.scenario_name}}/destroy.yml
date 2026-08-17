@@ -6,9 +6,9 @@
   gather_facts: false
   no_log: "{{ molecule_no_log }}"
   vars:
-    resource_group_name: molecule
-    virtual_network_name: molecule_vnet
-    subnet_name: molecule_subnet
+    resource_group_name: "{{ lookup('env', 'MOLECULE_AZURE_RESOURCE_GROUP') or 'molecule' }}"
+    virtual_network_name: "{{ resource_group_name }}_vnet"
+    subnet_name: "{{ resource_group_name }}_subnet"
   tasks:
     - name: Destroy resource group and all associated resources
       azure.azcollection.azure_rm_resourcegroup:
