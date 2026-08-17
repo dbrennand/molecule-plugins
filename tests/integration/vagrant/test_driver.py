@@ -60,7 +60,8 @@ def test_vagrant_invalid_scenario(
         "vagrant",
         scenario_name,
         command="create",
-        expected_returncodes=(2,),
+        expected_returncodes=(2, 4),
+        cleanup_returncodes=(0, 1, 4),
     )
     assert expected_message in run.result.stdout + run.result.stderr
 

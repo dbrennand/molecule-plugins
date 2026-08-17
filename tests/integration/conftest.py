@@ -30,6 +30,17 @@ TEMPLATE_CONTEXT = {
     "verifier_name": "ansible",
 }
 
+MOLECULE_CALL_FAILED = pytest.StashKey[bool]()
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Record the call-phase outcome so cleanup cannot mask a failure."""
+    outcome = yield
+    report = outcome.get_result()
+    if report.when == "call":
+        item.stash[MOLECULE_CALL_FAILED] = report.failed
+
 
 @dataclass(frozen=True)
 class MoleculeRun:
@@ -183,6 +194,7 @@ def molecule_scenario(
         command: str = "test",
         env: dict[str, str] | None = None,
         expected_returncodes: tuple[int, ...] = (0,),
+        cleanup_returncodes: tuple[int, ...] = (0,),
         timeout: int = 3600,
         redact_output: bool = False,
     ) -> MoleculeRun:
@@ -205,12 +217,12 @@ def molecule_scenario(
                     cwd=project_directory,
                     env=command_env,
                     timeout=900,
+                    expected_returncodes=cleanup_returncodes,
                     redact_output=redact_output,
                 )
             except AssertionError as exc:
                 message = f"{exc}\nMolecule ephemeral directory: {ephemeral_directory}"
-                rep_call = getattr(request.node, "rep_call", None)
-                if rep_call is not None and rep_call.failed:
+                if request.node.stash.get(MOLECULE_CALL_FAILED, False):
                     warnings.warn(message)
                     return
                 raise AssertionError(message) from exc

@@ -167,7 +167,7 @@ jobs:
       - name: Install Vagrant and libvirt
         run: |
           sudo apt-get update
-          sudo apt-get install --yes acl curl gpg libvirt-clients libvirt-daemon-system libvirt-dev qemu-kvm ruby-dev
+          sudo apt-get install --yes acl curl gpg libguestfs-tools libvirt-clients libvirt-daemon-system libvirt-dev qemu-kvm ruby-dev
           curl --fail --silent --show-error https://apt.releases.hashicorp.com/gpg \
             | gpg --dearmor \
             | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg >/dev/null
@@ -220,21 +220,22 @@ jobs:
           uv run --locked --no-default-groups --group pkg
           python -m twine check --strict dist/*
       - name: Verify packaged Cookiecutter resources
-        run: >-
-          uv run --locked --no-default-groups --group pkg python -c
-          "import glob, sys, zipfile;
-          sys.path.insert(0, '.');
-          from tests.integration.templates import EXPECTED_TEMPLATE_FILES;
-          wheel = glob.glob('dist/*.whl')[0];
-          names = zipfile.ZipFile(wheel).namelist();
-          missing = [];
+        run: |
+          uv run --locked --no-default-groups --group pkg python -c '
+          import glob, sys, zipfile
+          sys.path.insert(0, ".")
+          from tests.integration.templates import EXPECTED_TEMPLATE_FILES
+          wheel = glob.glob("dist/*.whl")[0]
+          names = zipfile.ZipFile(wheel).namelist()
+          missing = []
           for driver, files in EXPECTED_TEMPLATE_FILES.items():
-              prefix = 'molecule_plugins/' + driver + '/cookiecutter/';
+              prefix = "molecule_plugins/" + driver + "/cookiecutter/"
               for name in files:
-                  if not any(n.startswith(prefix) and n.endswith('/' + name) for n in names):
-                      missing.append((driver, name));
-          assert not missing, missing;
-          print(f'packaged_templates_verified={len(EXPECTED_TEMPLATE_FILES)}')"
+                  if not any(n.startswith(prefix) and n.endswith("/" + name) for n in names):
+                      missing.append((driver, name))
+          assert not missing, missing
+          print(f"packaged_templates_verified={len(EXPECTED_TEMPLATE_FILES)}")
+          '
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: distributions
