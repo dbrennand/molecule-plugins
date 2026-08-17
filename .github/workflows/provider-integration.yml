@@ -11,10 +11,6 @@ on:
         type: choice
         options: [all, azure, ec2, gce, openstack]
 
-concurrency:
-  group: provider-integration-${{ github.event.inputs.driver }}
-  cancel-in-progress: false
-
 permissions:
   contents: read
 
@@ -28,6 +24,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     environment: azure-integration
+    concurrency:
+      group: provider-integration-azure
+      cancel-in-progress: false
     env:
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_SECRET: ${{ secrets.AZURE_SECRET }}
@@ -36,29 +35,29 @@ jobs:
       AZURE_REGION: ${{ vars.AZURE_REGION }}
       MOLECULE_AZURE_RESOURCE_GROUP: molecule-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
           enable-cache: true
       - name: Install project, collections, and Azure SDK requirements
         run: |
-          uv sync --locked --all-extras
+          uv sync --locked --all-extras --group provider
           uv run ansible-galaxy collection install -r requirements.yml
           uv pip install --python .venv/bin/python \
-            --requirement "$HOME/.ansible/collections/ansible_collections/azure/azcollection/requirements.txt"
+            --requirement "$HOME/.ansible/collections/ansible_collections/azure/azcollection/requirements-azure.txt"
       - name: Run Azure integration
         run: >-
-          uv run --locked --all-extras
+          uv run --locked --no-sync --all-extras --group provider
           pytest tests/integration/azure -m provider --require-integration
           --junitxml=junit-azure.xml
       - name: Upload Azure report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: junit-azure
           path: junit-azure.xml
@@ -68,6 +67,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     environment: ec2-integration
+    concurrency:
+      group: provider-integration-ec2
+      cancel-in-progress: false
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -76,27 +78,27 @@ jobs:
       AWS_INSTANCE_TYPE: ${{ vars.AWS_INSTANCE_TYPE }}
       AWS_VPC_SUBNET_ID: ${{ vars.AWS_VPC_SUBNET_ID }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
           enable-cache: true
       - name: Install project and collections
         run: |
-          uv sync --locked --all-extras
+          uv sync --locked --all-extras --group provider
           uv run ansible-galaxy collection install -r requirements.yml
       - name: Run EC2 integration
         run: >-
-          uv run --locked --all-extras
+          uv run --locked --all-extras --group provider
           pytest tests/integration/ec2 -m provider --require-integration
           --junitxml=junit-ec2.xml
       - name: Upload EC2 report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: junit-ec2
           path: junit-ec2.xml
@@ -106,31 +108,35 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     environment: gce-integration
+    concurrency:
+      group: provider-integration-gce
+      cancel-in-progress: false
     env:
       GCE_PROJECT_ID: ${{ vars.GCE_PROJECT_ID }}
       GCE_REGION: ${{ vars.GCE_REGION }}
       GCP_AUTH_KIND: serviceaccount
       GCP_SERVICE_ACCOUNT_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
       GCP_SERVICE_ACCOUNT_FILE: /tmp/gcp-service-account.json
+      MOLECULE_GCE_INSTANCE_NAME: gce-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
           enable-cache: true
       - name: Materialize the protected service-account file
         run: install -m 600 /dev/null "$GCP_SERVICE_ACCOUNT_FILE" && printf '%s' "$GCP_SERVICE_ACCOUNT_JSON" > "$GCP_SERVICE_ACCOUNT_FILE"
       - name: Install project and collections
         run: |
-          uv sync --locked --all-extras
+          uv sync --locked --all-extras --group provider
           uv run ansible-galaxy collection install -r requirements.yml
       - name: Run GCE integration
         run: >-
-          uv run --locked --all-extras
+          uv run --locked --all-extras --group provider
           pytest tests/integration/gce -m provider --require-integration
           --junitxml=junit-gce.xml
       - name: Remove the service-account file
@@ -138,7 +144,7 @@ jobs:
         run: rm -f "$GCP_SERVICE_ACCOUNT_FILE"
       - name: Upload GCE report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: junit-gce
           path: junit-gce.xml
@@ -148,29 +154,32 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     environment: openstack-integration
+    concurrency:
+      group: provider-integration-openstack
+      cancel-in-progress: false
     env:
       OS_CLOUD: ${{ vars.OS_CLOUD }}
       OS_CLOUDS_YAML: ${{ secrets.OS_CLOUDS_YAML }}
       OS_CLIENT_CONFIG_FILE: /tmp/clouds.yaml
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
           enable-cache: true
       - name: Materialize the protected clouds configuration
         run: install -m 600 /dev/null "$OS_CLIENT_CONFIG_FILE" && printf '%s' "$OS_CLOUDS_YAML" > "$OS_CLIENT_CONFIG_FILE"
       - name: Install project and collections
         run: |
-          uv sync --locked --all-extras
+          uv sync --locked --all-extras --group provider
           uv run ansible-galaxy collection install -r requirements.yml
       - name: Run OpenStack integration
         run: >-
-          uv run --locked --all-extras
+          uv run --locked --all-extras --group provider
           pytest tests/integration/openstack -m provider --require-integration
           --junitxml=junit-openstack.xml
       - name: Remove the clouds configuration
@@ -178,7 +187,7 @@ jobs:
         run: rm -f "$OS_CLIENT_CONFIG_FILE"
       - name: Upload OpenStack report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: junit-openstack
           path: junit-openstack.xml

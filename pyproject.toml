@@ -29,6 +29,15 @@ pkg = [
   "build>=0.9",
   "twine>=4.0.1"
 ]
+provider = [
+  # GCE controller SDKs used by gcp_compute_* modules and windows_auth.py.
+  # Azure SDKs are installed from the azcollection requirements file in the
+  # provider workflow because that collection pins a dedicated SDK set.
+  "google-api-python-client>=2.130.0",
+  "google-cloud-storage>=2.16.0",
+  "oauth2client>=4.1.3",
+  "pycryptodome>=3.20.0"
+]
 
 [project]
 # https://peps.python.org/pep-0621/#readme

@@ -1,6 +1,8 @@
 """Integration tests for the GCE driver."""
 
+import importlib.util
 import os
+from pathlib import Path
 
 import pytest
 
@@ -16,6 +18,25 @@ GCE_CONFIGURATION = (
 def test_cookiecutter_template_renders_and_lints(render_and_lint_template):
     """Render and lint the packaged GCE scenario template."""
     assert render_and_lint_template("gce").name == "default"
+
+
+@pytest.mark.provider
+def test_windows_auth_helper_imports() -> None:
+    """The controller-side Windows auth helper imports under provider SDKs."""
+    pytest.importorskip("Crypto")
+    pytest.importorskip("googleapiclient")
+    pytest.importorskip("oauth2client")
+
+    helper = (
+        Path(__file__).parent / "molecule" / "windows" / "files" / "windows_auth.py"
+    )
+    spec = importlib.util.spec_from_file_location("windows_auth", helper)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    for callable_name in ("GetCompute", "GetKey", "DecryptPassword", "main"):
+        assert callable(getattr(module, callable_name)), callable_name
 
 
 @pytest.mark.provider

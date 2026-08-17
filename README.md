@@ -63,6 +63,19 @@ uv run --locked --all-extras pytest "tests/integration/${DRIVER}" \
   -m provider --require-integration
 ```
 
+Provider SDKs live in the locked `provider` dependency group. GCE
+integration and its Windows-auth helper additionally require that group:
+
+```bash
+uv run --locked --all-extras --group provider \
+  pytest tests/integration/gce -m provider --require-integration
+```
+
+Azure also needs the azcollection's own SDK pins. The `Provider integration`
+workflow installs them from the installed collection's
+`requirements-azure.txt` and runs pytest with `--no-sync` so the locked
+environment is not resynchronized away.
+
 Positive Molecule lifecycles pass `--destroy always` and register a focused
 scenario destroy finalizer. When a lifecycle or cleanup command fails, pytest
 reports the isolated Molecule ephemeral directory. After correcting the runtime

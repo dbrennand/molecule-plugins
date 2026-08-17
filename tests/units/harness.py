@@ -55,3 +55,24 @@ def test_redacted_command_failure_omits_arguments_and_output(tmp_path: Path) -> 
     assert command[2] not in message
     assert "<redacted arguments>" in message
     assert "<redacted>" in message
+
+
+def test_redacted_timeout_omits_arguments_from_chained_exception(
+    tmp_path: Path,
+) -> None:
+    """Timed-out protected commands never surface arguments in diagnostics."""
+    protected_value = "sensitive-timeout-value"
+    command = [
+        sys.executable,
+        "-c",
+        f"import time; print('{protected_value}'); time.sleep(30)",
+    ]
+
+    with pytest.raises(AssertionError) as error:
+        run_command(command, cwd=tmp_path, timeout=1, redact_output=True)
+
+    message = str(error.value)
+    assert protected_value not in message
+    assert command[2] not in message
+    assert "<redacted arguments>" in message
+    assert error.value.__cause__ is None

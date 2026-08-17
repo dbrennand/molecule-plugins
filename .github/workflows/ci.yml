@@ -26,13 +26,13 @@ jobs:
     name: Lint
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
           enable-cache: true
       - name: Run prek hooks
@@ -48,13 +48,13 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
           enable-cache: true
       - name: Run unit tests
@@ -65,7 +65,7 @@ jobs:
           --junitxml=junit-unit-${{ matrix.python-version }}.xml
       - name: Upload unit-test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: junit-unit-${{ matrix.python-version }}
           path: junit-unit-${{ matrix.python-version }}.xml
@@ -74,13 +74,13 @@ jobs:
     name: Render and lint driver templates
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
           enable-cache: true
       - name: Install Ansible collections
@@ -94,7 +94,7 @@ jobs:
           --junitxml=junit-template.xml
       - name: Upload template-test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: junit-template
           path: junit-template.xml
@@ -115,13 +115,13 @@ jobs:
     env:
       MOLECULE_CONTAINERS_BACKEND: ${{ matrix.runtime }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
           enable-cache: true
       - name: Install Podman
@@ -145,7 +145,7 @@ jobs:
           --junitxml=junit-${{ matrix.driver }}.xml
       - name: Upload runtime-test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: junit-${{ matrix.driver }}
           path: junit-${{ matrix.driver }}.xml
@@ -155,13 +155,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
           enable-cache: true
       - name: Install Vagrant and libvirt
@@ -193,7 +193,7 @@ jobs:
           --junitxml=junit-vagrant.xml
       - name: Upload Vagrant-test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: junit-vagrant
           path: junit-vagrant.xml
@@ -202,13 +202,13 @@ jobs:
     name: Package
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
           enable-cache: true
       - name: Build distributions
@@ -222,12 +222,20 @@ jobs:
       - name: Verify packaged Cookiecutter resources
         run: >-
           uv run --locked --no-default-groups --group pkg python -c
-          "import glob, zipfile;
-          wheel=glob.glob('dist/*.whl')[0];
-          names=zipfile.ZipFile(wheel).namelist();
-          configs=[n for n in names if n.endswith('/cookiecutter/cookiecutter.json')];
-          assert len(configs)==8, configs"
-      - uses: actions/upload-artifact@v4
+          "import glob, sys, zipfile;
+          sys.path.insert(0, '.');
+          from tests.integration.templates import EXPECTED_TEMPLATE_FILES;
+          wheel = glob.glob('dist/*.whl')[0];
+          names = zipfile.ZipFile(wheel).namelist();
+          missing = [];
+          for driver, files in EXPECTED_TEMPLATE_FILES.items():
+              prefix = 'molecule_plugins/' + driver + '/cookiecutter/';
+              for name in files:
+                  if not any(n.startswith(prefix) and n.endswith('/' + name) for n in names):
+                      missing.append((driver, name));
+          assert not missing, missing;
+          print(f'packaged_templates_verified={len(EXPECTED_TEMPLATE_FILES)}')"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: distributions
           path: dist/
@@ -236,13 +244,13 @@ jobs:
     name: Compatibility / Molecule main
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
       - name: Create isolated compatibility environment
         run: |
           uv venv --python 3.13 .venv-devel

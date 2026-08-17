@@ -10,7 +10,7 @@ driver:
   external_access: false # chose whether to create a public IP for the VM or not - default is private IP only
   instance_os_type: windows # will be considered linux by default, but can be explicitly set to windows
 platforms:
-  - name: linuxgce-createdbymolecule # is an instance name
+  - name: ${MOLECULE_GCE_INSTANCE_NAME:-linuxgce-createdbymolecule} # is an instance name
     machine_type: n1-standard-1 # define your machine type
     zone: # example: us-west1-b, will default to zone b of driver.region
 provisioner:

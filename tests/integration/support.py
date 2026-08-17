@@ -51,7 +51,7 @@ def run_command(
     except subprocess.TimeoutExpired as exc:
         display_command = _format_command(command, redact=redact_output)
         msg = f"Command timed out after {timeout}s: {display_command} (cwd={cwd})"
-        raise AssertionError(msg) from exc
+        raise AssertionError(msg) from (None if redact_output else exc)
 
     if result.returncode not in expected_returncodes:
         output = "<redacted>" if redact_output else result.stdout + result.stderr
