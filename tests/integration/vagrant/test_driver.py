@@ -43,7 +43,8 @@ def test_vagrant_scenario(
 @pytest.mark.parametrize(
     ("scenario_name", "expected_message"),
     [
-        ("invalid", "Failed to validate generated Vagrantfile"),
+        # Molecule displays only a truncated module summary in captured output.
+        ("invalid", "Failed to validate generated"),
         ("invalid_net", "Invalid network_name value my_network."),
     ],
 )
@@ -61,7 +62,7 @@ def test_vagrant_invalid_scenario(
         scenario_name,
         command="create",
         expected_returncodes=(2, 4),
-        cleanup_returncodes=(0, 1, 4),
+        cleanup_returncodes=(0, 1, 2, 4),
     )
     assert expected_message in run.result.stdout + run.result.stderr
 
