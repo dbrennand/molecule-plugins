@@ -13,6 +13,21 @@ from tests.integration.support import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _vagrant_module_library(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Expose the bundled vagrant Ansible module to scenario playbooks."""
+    module_directory = (
+        REPOSITORY_ROOT / "src" / "molecule_plugins" / "vagrant" / "modules"
+    )
+    existing = os.environ.get("ANSIBLE_LIBRARY")
+    library_path = (
+        f"{existing}{os.pathsep}{module_directory}"
+        if existing
+        else str(module_directory)
+    )
+    monkeypatch.setenv("ANSIBLE_LIBRARY", library_path)
+
+
 @pytest.fixture(scope="session")
 def vagrant_testbox(
     tmp_path_factory: pytest.TempPathFactory,
