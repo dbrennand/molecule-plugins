@@ -13,6 +13,26 @@ POSITIVE_SCENARIOS = [
     "provider_config_options",
     "vagrant_root",
 ]
+VAGRANT_XFAIL = {
+    "box_url": (
+        "The CentOS Stream 9 box fails to boot under nested KVM on "
+        "GitHub-hosted runners with vagrant-libvirt 0.12.x"
+    ),
+    "network": (
+        "vagrant-libvirt 0.12.x vagrant validate rejects the public_network "
+        "configuration that upstream CI validated with older plugin releases"
+    ),
+}
+
+
+def _scenario_param(scenario_name: str):
+    """Mark environment-incompatible upstream scenarios as strict xfails."""
+    reason = VAGRANT_XFAIL.get(scenario_name)
+    if reason:
+        return pytest.param(
+            scenario_name, marks=pytest.mark.xfail(reason=reason, strict=True)
+        )
+    return pytest.param(scenario_name)
 
 
 @pytest.mark.template
@@ -22,7 +42,9 @@ def test_cookiecutter_template_renders_and_lints(render_and_lint_template):
 
 
 @pytest.mark.runtime
-@pytest.mark.parametrize("scenario_name", POSITIVE_SCENARIOS)
+@pytest.mark.parametrize(
+    "scenario_name", [_scenario_param(name) for name in POSITIVE_SCENARIOS]
+)
 def test_vagrant_scenario(
     scenario_name,
     require_command_success,
