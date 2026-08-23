@@ -4,31 +4,21 @@ import subprocess
 import warnings
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from importlib.resources import as_file, files
 from pathlib import Path
 from shutil import which
 
 import pytest
-from cookiecutter.main import cookiecutter
 
 from tests.integration.support import (
+    materialize_rendered_playbooks,
+    render_driver_template,
     require_prerequisite,
 )
 from tests.integration.support import (
     run_command as execute_command,
 )
-from tests.integration.templates import EXPECTED_TEMPLATE_FILES
 
 REPOSITORY_ROOT = Path(__file__).parents[2]
-TEMPLATE_CONTEXT = {
-    "dependency_name": "galaxy",
-    "driver_name": "default",
-    "molecule_directory": "molecule",
-    "provisioner_name": "ansible",
-    "role_name": "test_role",
-    "scenario_name": "default",
-    "verifier_name": "ansible",
-}
 
 MOLECULE_CALL_FAILED = pytest.StashKey[bool]()
 
@@ -178,11 +168,74 @@ def require_container_runtime(
     return require
 
 
+RENDERED_PLAYBOOKS = ("converge.yml", "create.yml", "destroy.yml", "prepare.yml")
+
+
+def _run_molecule_scenario(
+    driver_name: str,
+    scenario_name: str,
+    *,
+    tmp_path: Path,
+    request: pytest.FixtureRequest,
+    command: str = "test",
+    env: dict[str, str] | None = None,
+    expected_returncodes: tuple[int, ...] = (0,),
+    cleanup_returncodes: tuple[int, ...] = (0,),
+    timeout: int = 3600,
+    redact_output: bool = False,
+) -> MoleculeRun:
+    """Run one Molecule scenario from the driver project directory."""
+    project_directory = REPOSITORY_ROOT / "tests/integration" / driver_name
+    scenario_directory = project_directory / "molecule" / scenario_name
+    assert (scenario_directory / "molecule.yml").is_file()
+
+    ephemeral_directory = tmp_path / f"{driver_name}-{scenario_name}"
+    command_env = {
+        "ANSIBLE_FORCE_COLOR": "0",
+        "MOLECULE_EPHEMERAL_DIRECTORY": str(ephemeral_directory),
+        **(env or {}),
+    }
+
+    def cleanup() -> None:
+        try:
+            execute_command(
+                ["molecule", "destroy", "--scenario-name", scenario_name],
+                cwd=project_directory,
+                env=command_env,
+                timeout=900,
+                expected_returncodes=cleanup_returncodes,
+                redact_output=redact_output,
+            )
+        except AssertionError as exc:
+            message = f"{exc}\nMolecule ephemeral directory: {ephemeral_directory}"
+            if request.node.stash.get(MOLECULE_CALL_FAILED, False):
+                warnings.warn(message)
+                return
+            raise AssertionError(message) from exc
+
+    request.addfinalizer(cleanup)
+    command_args = ["molecule", command, "--scenario-name", scenario_name]
+    if command == "test":
+        command_args.extend(["--destroy", "always"])
+    try:
+        result = execute_command(
+            command_args,
+            cwd=project_directory,
+            env=command_env,
+            expected_returncodes=expected_returncodes,
+            timeout=timeout,
+            redact_output=redact_output,
+        )
+    except AssertionError as exc:
+        message = f"{exc}\nMolecule ephemeral directory: {ephemeral_directory}"
+        raise AssertionError(message) from exc
+    return MoleculeRun(result=result, ephemeral_directory=ephemeral_directory)
+
+
 @pytest.fixture
 def molecule_scenario(
     tmp_path: Path,
     request: pytest.FixtureRequest,
-    run_command: Callable[..., subprocess.CompletedProcess[str]],
     require_executable: Callable[[str], str],
 ) -> Callable[..., MoleculeRun]:
     """Return a helper that invokes one checked-in Molecule scenario."""
@@ -190,60 +243,81 @@ def molecule_scenario(
     def run(
         driver_name: str,
         scenario_name: str,
+        **kwargs,
+    ) -> MoleculeRun:
+        require_executable("molecule")
+        return _run_molecule_scenario(
+            driver_name,
+            scenario_name,
+            tmp_path=tmp_path,
+            request=request,
+            **kwargs,
+        )
+
+    return run
+
+
+@pytest.fixture
+def rendered_molecule_scenario(
+    tmp_path: Path,
+    request: pytest.FixtureRequest,
+    require_executable: Callable[[str], str],
+) -> Callable[..., MoleculeRun]:
+    """Return a helper that renders the driver template into the scenario.
+
+    The checked-in scenario directory keeps the valid molecule.yml and any
+    test-owned files, while every playbook the driver cookiecutter template
+    provides is rendered from the import-resolved template at test time and
+    copied over the scenario, so runs exercise the current test-environment
+    template rather than a checked-in copy of it.
+    """
+
+    def run(
+        driver_name: str,
+        scenario_name: str,
         *,
-        command: str = "test",
-        env: dict[str, str] | None = None,
-        expected_returncodes: tuple[int, ...] = (0,),
-        cleanup_returncodes: tuple[int, ...] = (0,),
-        timeout: int = 3600,
-        redact_output: bool = False,
+        render_files: Sequence[str] = RENDERED_PLAYBOOKS,
+        converge_overlay: bool = False,
+        **kwargs,
     ) -> MoleculeRun:
         require_executable("molecule")
         project_directory = REPOSITORY_ROOT / "tests/integration" / driver_name
         scenario_directory = project_directory / "molecule" / scenario_name
         assert (scenario_directory / "molecule.yml").is_file()
 
-        ephemeral_directory = tmp_path / f"{driver_name}-{scenario_name}"
-        command_env = {
-            "ANSIBLE_FORCE_COLOR": "0",
-            "MOLECULE_EPHEMERAL_DIRECTORY": str(ephemeral_directory),
-            **(env or {}),
-        }
+        rendered_scenario = render_driver_template(
+            driver_name,
+            tmp_path / f"rendered-{driver_name}",
+        )
+        materialize_rendered_playbooks(
+            rendered_scenario,
+            scenario_directory,
+            render_files=render_files,
+            converge_overlay=(
+                REPOSITORY_ROOT / "tests/integration/molecule-marker-tasks.yml"
+                if converge_overlay
+                else None
+            ),
+        )
 
-        def cleanup() -> None:
-            try:
-                execute_command(
-                    ["molecule", "destroy", "--scenario-name", scenario_name],
-                    cwd=project_directory,
-                    env=command_env,
-                    timeout=900,
-                    expected_returncodes=cleanup_returncodes,
-                    redact_output=redact_output,
-                )
-            except AssertionError as exc:
-                message = f"{exc}\nMolecule ephemeral directory: {ephemeral_directory}"
-                if request.node.stash.get(MOLECULE_CALL_FAILED, False):
-                    warnings.warn(message)
-                    return
-                raise AssertionError(message) from exc
+        # The rendered converge includes the scaffold role; make it resolvable
+        # from the driver project root, as a real init would.
+        role_tasks = project_directory / "roles" / "test_role" / "tasks"
+        role_tasks.mkdir(parents=True, exist_ok=True)
+        (role_tasks / "main.yml").write_text(
+            "---\n"
+            "- name: Test role\n"
+            "  ansible.builtin.debug:\n"
+            '    msg: "molecule-plugins test role"\n'
+        )
 
-        request.addfinalizer(cleanup)
-        command_args = ["molecule", command, "--scenario-name", scenario_name]
-        if command == "test":
-            command_args.extend(["--destroy", "always"])
-        try:
-            result = run_command(
-                command_args,
-                cwd=project_directory,
-                env=command_env,
-                expected_returncodes=expected_returncodes,
-                timeout=timeout,
-                redact_output=redact_output,
-            )
-        except AssertionError as exc:
-            message = f"{exc}\nMolecule ephemeral directory: {ephemeral_directory}"
-            raise AssertionError(message) from exc
-        return MoleculeRun(result=result, ephemeral_directory=ephemeral_directory)
+        return _run_molecule_scenario(
+            driver_name,
+            scenario_name,
+            tmp_path=tmp_path,
+            request=request,
+            **kwargs,
+        )
 
     return run
 
@@ -253,36 +327,10 @@ def render_and_lint_template(
     tmp_path: Path,
     run_command: Callable[..., subprocess.CompletedProcess[str]],
 ) -> Callable[[str], Path]:
-    """Return a helper that renders and lints one packaged driver template."""
+    """Return a helper that renders and lints one import-resolved template."""
 
     def render(driver_name: str) -> Path:
-        package = f"molecule_plugins.{driver_name}"
-        template_resource = files(package).joinpath("cookiecutter")
-        context = {**TEMPLATE_CONTEXT, "driver_name": driver_name}
-
-        with as_file(template_resource) as template_path:
-            assert Path(template_path, "cookiecutter.json").is_file()
-            rendered_root = Path(
-                cookiecutter(
-                    str(template_path),
-                    no_input=True,
-                    output_dir=tmp_path,
-                    extra_context=context,
-                )
-            )
-
-        scenario_path = rendered_root / "default"
-        assert scenario_path.is_dir()
-        for expected_file in EXPECTED_TEMPLATE_FILES[driver_name]:
-            assert (scenario_path / expected_file).is_file()
-
-        for rendered_file in scenario_path.rglob("*"):
-            if not rendered_file.is_file():
-                continue
-            content = rendered_file.read_text()
-            assert "cookiecutter." not in content
-            assert "{% raw %}" not in content
-            assert "{% endraw %}" not in content
+        scenario_path = render_driver_template(driver_name, tmp_path)
 
         run_command(
             [

@@ -6,7 +6,6 @@ pytestmark = [pytest.mark.integration, pytest.mark.vagrant]
 POSITIVE_SCENARIOS = [
     "box_url",
     "config_options",
-    "default",
     "default_compat",
     "hostname",
     "network",
@@ -37,8 +36,24 @@ def _scenario_param(scenario_name: str):
 
 @pytest.mark.template
 def test_cookiecutter_template_renders_and_lints(render_and_lint_template):
-    """Render and lint the packaged Vagrant scenario template."""
+    """Render and lint the import-resolved Vagrant scenario template."""
     assert render_and_lint_template("vagrant").name == "default"
+
+
+@pytest.mark.runtime
+def test_vagrant_default_scenario(
+    require_command_success,
+    vagrant_testbox,
+    rendered_molecule_scenario,
+):
+    """Render the Vagrant template and run the driver against it."""
+    require_command_success(["vagrant", "--version"])
+
+    rendered_molecule_scenario(
+        "vagrant",
+        "default",
+        env={"TESTBOX": vagrant_testbox},
+    )
 
 
 @pytest.mark.runtime

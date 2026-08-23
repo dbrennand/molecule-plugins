@@ -11,16 +11,16 @@ pytestmark = [pytest.mark.integration, pytest.mark.podman]
 
 @pytest.mark.template
 def test_cookiecutter_template_renders_and_lints(render_and_lint_template):
-    """Render and lint the packaged Podman scenario template."""
+    """Render and lint the import-resolved Podman scenario template."""
     assert render_and_lint_template("podman").name == "default"
 
 
 @pytest.mark.runtime
-def test_podman_scenario(require_command_success, molecule_scenario):
-    """Run the checked-in Podman scenario."""
+def test_podman_scenario(require_command_success, rendered_molecule_scenario):
+    """Render the Podman template and run the driver against it."""
     require_command_success(["podman", "info"])
 
-    molecule_scenario("podman", "default")
+    rendered_molecule_scenario("podman", "default")
 
 
 @pytest.mark.runtime

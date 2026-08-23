@@ -7,8 +7,16 @@ pytestmark = [pytest.mark.integration, pytest.mark.docker]
 
 @pytest.mark.template
 def test_cookiecutter_template_renders_and_lints(render_and_lint_template):
-    """Render and lint the packaged Docker scenario template."""
+    """Render and lint the import-resolved Docker scenario template."""
     assert render_and_lint_template("docker").name == "default"
+
+
+@pytest.mark.runtime
+def test_docker_default_scenario(require_command_success, rendered_molecule_scenario):
+    """Render the Docker template and run the driver against it."""
+    require_command_success(["docker", "info"])
+
+    rendered_molecule_scenario("docker", "default")
 
 
 @pytest.mark.runtime

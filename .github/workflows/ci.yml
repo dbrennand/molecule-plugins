@@ -84,7 +84,7 @@ jobs:
         run: >-
           uv run --locked --no-default-groups --group dev
           ansible-galaxy collection install -r requirements.yml
-      - name: Render and lint all packaged templates
+      - name: Render and lint all import-resolved templates
         run: >-
           uv run --locked --no-default-groups --group dev
           pytest tests/integration -m template
@@ -99,6 +99,7 @@ jobs:
   local-runtime:
     name: Runtime / ${{ matrix.driver }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -122,9 +123,74 @@ jobs:
           enable-cache: true
       - name: Install Podman
         if: matrix.runtime == 'podman'
+        timeout-minutes: 10
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes podman
+          set -euo pipefail
+          mirror_file=/etc/apt/apt-mirrors.txt
+          if [ -f "$mirror_file" ] && grep -Eq '^[[:space:]]*(https?://)?azure\.archive\.ubuntu\.com([/:[:space:]]|$)' "$mirror_file"; then
+            mirror_tmp=$(mktemp)
+            sudo awk '
+              function is_azure(line) {
+                return line ~ /^[[:space:]]*(https?:\/\/)?azure\.archive\.ubuntu\.com([\/:[:space:]]|$)/
+              }
+              function is_canonical(line) {
+                return line ~ /^[[:space:]]*(https?:\/\/)?archive\.ubuntu\.com([\/:[:space:]]|$)/
+              }
+              {
+                lines[++line_count] = $0
+                if (is_azure($0)) {
+                  azure[++azure_count] = $0
+                } else if (is_canonical($0)) {
+                  canonical[++canonical_count] = $0
+                }
+              }
+              function prefer_canonical(line) {
+                sub(/priority:[0-9]+/, "priority:1", line)
+                return line
+              }
+              function demote_azure(line) {
+                sub(/priority:[0-9]+/, "priority:9", line)
+                return line
+              }
+              END {
+                for (i = 1; i <= canonical_count; i++) print prefer_canonical(canonical[i])
+                if (canonical_count == 0) {
+                  for (i = 1; i <= azure_count; i++) {
+                    line = azure[i]
+                    sub(/azure\.archive\.ubuntu\.com/, "archive.ubuntu.com", line)
+                    print prefer_canonical(line)
+                  }
+                }
+                for (i = 1; i <= line_count; i++) {
+                  if (is_azure(lines[i])) {
+                    if (canonical_count == 0) print demote_azure(lines[i])
+                    continue
+                  }
+                  if (canonical_count > 0 && is_canonical(lines[i])) {
+                    continue
+                  }
+                  print lines[i]
+                }
+                if (canonical_count > 0) {
+                  for (i = 1; i <= azure_count; i++) print demote_azure(azure[i])
+                }
+              }
+            ' "$mirror_file" > "$mirror_tmp"
+            sudo mv "$mirror_tmp" "$mirror_file"
+          fi
+          sudo apt-get \
+            -o Acquire::Retries=3 \
+            -o Acquire::http::Timeout=30 \
+            -o Acquire::https::Timeout=30 \
+            update
+          sudo apt-get \
+            -o Acquire::Retries=3 \
+            -o Acquire::http::Timeout=30 \
+            -o Acquire::https::Timeout=30 \
+            -o DPkg::Lock::Timeout=60 \
+            install --yes podman
           podman info
       - name: Check Docker
         if: matrix.runtime == 'docker'

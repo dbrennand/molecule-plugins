@@ -1,5 +1,6 @@
----
-- name: Converge
+# Test-owned converge overlay appended to the rendered template converge for
+# provider scenarios whose testinfra verifier asserts instance usability.
+- name: Verify the provisioned instance is usable
   hosts: all
   gather_facts: false
   become: true

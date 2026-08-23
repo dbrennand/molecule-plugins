@@ -17,19 +17,31 @@ def _aws_credentials_available() -> bool:
 
 @pytest.mark.template
 def test_cookiecutter_template_renders_and_lints(render_and_lint_template):
-    """Render and lint the packaged EC2 scenario template."""
+    """Render and lint the import-resolved EC2 scenario template."""
     assert render_and_lint_template("ec2").name == "default"
 
 
 @pytest.mark.provider
-@pytest.mark.parametrize("scenario_name", ["default", "multi_node"])
+@pytest.mark.parametrize(
+    ("scenario_name", "render_files", "converge_overlay"),
+    [
+        (
+            "default",
+            ("converge.yml", "create.yml", "destroy.yml", "prepare.yml"),
+            True,
+        ),
+        ("multi_node", ("create.yml", "destroy.yml", "prepare.yml"), False),
+    ],
+)
 def test_ec2_scenario(
     scenario_name,
+    render_files,
+    converge_overlay,
     require_capability,
     require_provider_preflight,
-    molecule_scenario,
+    rendered_molecule_scenario,
 ):
-    """Run a checked-in EC2 provider scenario."""
+    """Render the EC2 template into the scenario and run the driver."""
     missing = [name for name in EC2_CONFIGURATION if not os.environ.get(name)]
     require_capability(
         _aws_credentials_available() and not missing,
@@ -52,4 +64,10 @@ def test_ec2_scenario(
         provider="EC2",
     )
 
-    molecule_scenario("ec2", scenario_name, redact_output=True)
+    rendered_molecule_scenario(
+        "ec2",
+        scenario_name,
+        render_files=render_files,
+        converge_overlay=converge_overlay,
+        redact_output=True,
+    )

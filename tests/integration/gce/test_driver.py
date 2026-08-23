@@ -16,7 +16,7 @@ GCE_CONFIGURATION = (
 
 @pytest.mark.template
 def test_cookiecutter_template_renders_and_lints(render_and_lint_template):
-    """Render and lint the packaged GCE scenario template."""
+    """Render and lint the import-resolved GCE scenario template."""
     assert render_and_lint_template("gce").name == "default"
 
 

@@ -12,7 +12,7 @@ INTEGRATION_ROOT = TESTS_ROOT / "integration"
 EXPECTED_SCENARIOS = {
     "azure": ["default", "multi_node"],
     "containers": ["default"],
-    "docker": ["env_substitution", "with_context"],
+    "docker": ["default", "env_substitution", "with_context"],
     "ec2": ["default", "multi_node"],
     "gce": ["linux", "windows"],
     "openstack": ["default", "multiple", "network", "security_group", "volume"],
@@ -50,6 +50,6 @@ def test_scenario_map_matches_template_map() -> None:
     """The scenario and template expectations cover the same driver set."""
     assert sorted(EXPECTED_SCENARIOS) == sorted(EXPECTED_TEMPLATE_FILES)
     total_scenarios = sum(len(scenarios) for scenarios in EXPECTED_SCENARIOS.values())
-    assert total_scenarios == 26
+    assert total_scenarios == 27
     for driver_name, expected_files in EXPECTED_TEMPLATE_FILES.items():
         assert expected_files, driver_name

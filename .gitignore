@@ -136,3 +136,26 @@ patches
 *.orig
 *.rej
 .ansible
+
+# Scenario playbooks rendered from the packaged driver cookiecutter templates
+# at test time (tests/integration/conftest.py rendered_molecule_scenario).
+# These files are regenerated on every run and must never be committed.
+tests/integration/azure/molecule/default/converge.yml
+tests/integration/azure/molecule/default/create.yml
+tests/integration/azure/molecule/default/destroy.yml
+tests/integration/azure/molecule/multi_node/create.yml
+tests/integration/azure/molecule/multi_node/destroy.yml
+tests/integration/ec2/molecule/default/converge.yml
+tests/integration/ec2/molecule/default/create.yml
+tests/integration/ec2/molecule/default/destroy.yml
+tests/integration/ec2/molecule/default/prepare.yml
+tests/integration/ec2/molecule/multi_node/create.yml
+tests/integration/ec2/molecule/multi_node/destroy.yml
+tests/integration/ec2/molecule/multi_node/prepare.yml
+tests/integration/podman/molecule/default/converge.yml
+tests/integration/containers/molecule/default/converge.yml
+tests/integration/openstack/molecule/default/converge.yml
+tests/integration/vagrant/molecule/default/converge.yml
+tests/integration/docker/molecule/default/converge.yml
+# Test-owned role scaffold generated for rendered template converge playbooks
+tests/integration/*/roles/

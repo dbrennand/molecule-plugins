@@ -150,7 +150,7 @@ markers = [
   "podman: Podman driver integration",
   "provider: requires external cloud provider infrastructure",
   "runtime: requires a local container or virtualization runtime",
-  "template: renders and lints a packaged driver template",
+  "template: renders and lints an import-resolved driver template",
   "vagrant: Vagrant driver integration"
 ]
 norecursedirs = ["molecule"]
