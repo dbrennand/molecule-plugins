@@ -3,5 +3,11 @@ driver:
   name: __DRIVER__
 platforms:
   - name: instance
-    image: quay.io/centos/centos:stream8
+    image: docker.io/library/python:3.12-slim
     pre_build_image: true
+provisioner:
+  name: ansible
+  inventory:
+    host_vars:
+      instance:
+        ansible_python_interpreter: /usr/local/bin/python3

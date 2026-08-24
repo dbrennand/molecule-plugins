@@ -232,10 +232,6 @@ commands = [
 description = "Unit testing"
 skip_install = false
 runner = "uv-venv-lock-runner"
-allowlist_externals = [
-  "bash",
-  "rm"
-]
 extras = [
   "azure",
   "docker",
@@ -246,9 +242,7 @@ extras = [
   "vagrant"
 ]
 commands = [
-  ["ansible-galaxy", "install", "-r", "requirements.yml"],
-  ["pytest", "--collect-only"],
-  ["pytest", "--color=yes", "{tty:-s}"]
+  ["pytest", "-m", "not runtime", "--color=yes", "{tty:-s}"]
 ]
 pass_env = [
   "CI",
@@ -264,8 +258,6 @@ pass_env = [
 
 [tool.tox.env_run_base.set_env]
 ANSIBLE_FORCE_COLOR = "{env:ANSIBLE_FORCE_COLOR:1}"
-ANSIBLE_INVENTORY = "{tox_root}/tests/hosts.ini"
-ANSIBLE_CONFIG = "{tox_root}/ansible.cfg"
 ANSIBLE_NOCOWS = "1"
 ANSIBLE_RETRY_FILES_ENABLED = "0"
 ANSIBLE_VERBOSITY = "{env:ANSIBLE_VERBOSITY:0}"
@@ -273,8 +265,6 @@ MOLECULE_NO_LOG = "{env:MOLECULE_NO_LOG:0}"
 PIP_DISABLE_PIP_VERSION_CHECK = "1"
 PY_COLORS = "{env:PY_COLORS:1}"
 PYTHONDONTWRITEBYTECODE = "1"
-MOLECULE_OPTS = "--destroy always"
-TESTBOX = "{env:TESTBOX:testbox}"
 
 [tool.uv]
 default-groups = ["dev", "lint", "pkg"]
