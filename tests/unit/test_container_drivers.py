@@ -7,9 +7,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from molecule.api import MoleculeRuntimeWarning
 from packaging.version import Version
 
-from molecule.api import MoleculeRuntimeWarning
 from molecule_plugins.containers.driver import Container, DriverBackend
 from molecule_plugins.docker import driver as docker_driver
 from molecule_plugins.openstack import driver as openstack_driver
@@ -92,8 +92,12 @@ def test_docker_reset_removes_owned_resources(make_config, monkeypatch):
     network_list_calls = []
     stopped = []
     removed = []
-    container = SimpleNamespace(id="container-1", stop=lambda **kwargs: stopped.append(kwargs))
-    network = SimpleNamespace(name="network-1", remove=lambda: removed.append("network-1"))
+    container = SimpleNamespace(
+        id="container-1", stop=lambda **kwargs: stopped.append(kwargs)
+    )
+    network = SimpleNamespace(
+        name="network-1", remove=lambda: removed.append("network-1")
+    )
     containers = SimpleNamespace(
         list=lambda **kwargs: container_list_calls.append(kwargs) or [container],
         prune=lambda **kwargs: container_prune_calls.append(kwargs)
@@ -119,7 +123,9 @@ def test_docker_reset_removes_owned_resources(make_config, monkeypatch):
 
 def test_podman_command_and_connection_options(make_config, monkeypatch):
     monkeypatch.setenv("MOLECULE_PODMAN_EXECUTABLE", "podman-remote")
-    monkeypatch.setattr(podman_driver, "which", lambda executable: f"/usr/bin/{executable}")
+    monkeypatch.setattr(
+        podman_driver, "which", lambda executable: f"/usr/bin/{executable}"
+    )
     driver = podman_driver.Podman(make_config())
 
     assert driver.podman_cmd == "/usr/bin/podman-remote"

@@ -11,9 +11,9 @@ import pytest
 from ansible.parsing.dataloader import DataLoader
 from jinja2 import Environment, StrictUndefined
 from jsonschema import ValidationError, validators
+from molecule.api import Driver
 
 import molecule_plugins
-from molecule.api import Driver
 
 pytestmark = pytest.mark.integration
 
@@ -110,7 +110,9 @@ def render_cookiecutter_tree(config_file, destination):
     return rendered_files
 
 
-@pytest.mark.parametrize("config_file", COOKIECUTTER_ROOTS, ids=lambda path: path.parents[1].name)
+@pytest.mark.parametrize(
+    "config_file", COOKIECUTTER_ROOTS, ids=lambda path: path.parents[1].name
+)
 def test_cookiecutter_templates_render_and_parse(config_file, tmp_path):
     rendered_files = render_cookiecutter_tree(config_file, tmp_path)
     yaml_files = [path for path in rendered_files if path.suffix in {".yml", ".yaml"}]
@@ -136,7 +138,9 @@ def test_driver_schemas_accept_only_supported_name(schema_file, driver_name):
         validator.validate({"driver": {"name": "unsupported"}})
 
 
-@pytest.mark.parametrize("playbook", PLAYBOOKS, ids=lambda path: str(path.relative_to(PACKAGE_ROOT)))
+@pytest.mark.parametrize(
+    "playbook", PLAYBOOKS, ids=lambda path: str(path.relative_to(PACKAGE_ROOT))
+)
 def test_packaged_playbooks_parse_with_ansible(playbook):
     assert DataLoader().load(playbook.read_text(encoding="utf-8")) is not None
 
@@ -144,7 +148,11 @@ def test_packaged_playbooks_parse_with_ansible(playbook):
 @pytest.mark.parametrize(
     "source",
     [
-        PACKAGE_ROOT / "docker" / "playbooks" / "filter_plugins" / "get_docker_networks.py",
+        PACKAGE_ROOT
+        / "docker"
+        / "playbooks"
+        / "filter_plugins"
+        / "get_docker_networks.py",
         PACKAGE_ROOT / "gce" / "playbooks" / "files" / "windows_auth.py",
     ],
     ids=("docker-filter", "gce-windows-auth"),

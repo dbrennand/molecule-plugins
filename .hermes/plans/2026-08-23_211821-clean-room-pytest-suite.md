@@ -45,6 +45,7 @@ The GCE `windows_auth.py` script imports undeclared `googleapiclient` and PyCryp
 **Objective:** Make only the clean-room suite collect by default and document the two useful test classes.
 
 **Files:**
+
 - Create: `tests/conftest.py`
 - Create: `tests/unit/__init__.py`
 - Create: `tests/integration/__init__.py`
@@ -67,6 +68,7 @@ The GCE `windows_auth.py` script imports undeclared `googleapiclient` and PyCryp
 **Objective:** Cover common public behavior with a compact parametrized matrix.
 
 **Files:**
+
 - Create: `tests/unit/test_driver_contracts.py`
 
 **Steps:**
@@ -90,6 +92,7 @@ The GCE `windows_auth.py` script imports undeclared `googleapiclient` and PyCryp
 **Objective:** Cover local backend decisions and side effects while keeping engines and daemons mocked in unit tests.
 
 **Files:**
+
 - Create: `tests/unit/test_container_drivers.py`
 
 **Steps:**
@@ -120,6 +123,7 @@ The GCE `windows_auth.py` script imports undeclared `googleapiclient` and PyCryp
 **Objective:** Protect meaningful pure transformations without turning embedded scripts into separate projects.
 
 **Files:**
+
 - Create: `tests/unit/test_helpers.py`
 
 **Steps:**
@@ -141,6 +145,7 @@ The GCE `windows_auth.py` script imports undeclared `googleapiclient` and PyCryp
 **Objective:** Test that source files work together with packaging, Molecule, Jinja, Ansible, and jsonschema.
 
 **Files:**
+
 - Create: `tests/integration/test_plugins_and_resources.py`
 
 **Steps:**
@@ -162,6 +167,7 @@ The GCE `windows_auth.py` script imports undeclared `googleapiclient` and PyCryp
 **Objective:** Prove the two local container drivers can complete Molecule's lifecycle, while keeping this optional and small.
 
 **Files:**
+
 - Create: `tests/integration/test_container_runtime.py`
 - Create: `tests/integration/fixtures/container/molecule.yml`
 - Create: `tests/integration/fixtures/container/converge.yml`
@@ -183,6 +189,7 @@ The GCE `windows_auth.py` script imports undeclared `googleapiclient` and PyCryp
 **Objective:** Make the clean-room suite the only maintained suite and confirm its fast/offline default.
 
 **Files:**
+
 - Modify: `pyproject.toml:230-276` only where old test paths or helper setup are referenced
 - Remove: previous test directories after the new suite passes (delete wholesale; do not migrate individual files)
 

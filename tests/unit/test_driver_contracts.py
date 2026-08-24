@@ -3,8 +3,8 @@
 from pathlib import Path
 
 import pytest
-
 from molecule import util
+
 from molecule_plugins.azure.driver import Azure
 from molecule_plugins.ec2.driver import EC2
 from molecule_plugins.gce.driver import GCE
