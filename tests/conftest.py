@@ -22,7 +22,7 @@ def make_config(tmp_path):
 
         return SimpleNamespace(
             command_args=command_args or {},
-            config={"platforms": platforms or []},
+            config={"driver": driver_data, "platforms": platforms or []},
             config_data={"driver": driver_data},
             driver=SimpleNamespace(
                 instance_config=str(tmp_path / "instance_config.yml"),
