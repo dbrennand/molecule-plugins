@@ -8,8 +8,7 @@ build-backend = "setuptools.build_meta"
 [dependency-groups]
 dev = [
   "bindep>=2.13.0",
-  "molecule[test]>=25.1.0",
-  "pytest-helpers-namespace>=2019.1.8"
+  "molecule[test]>=25.1.0"
 ]
 docker = [
   "docker>=4.3.1",
@@ -121,10 +120,12 @@ changelog = "https://github.com/ansible-community/molecule-plugins/releases"
 skip = "uv.lock"
 
 [tool.pytest.ini_options]
-addopts = "-v -rxXs --doctest-modules --durations 10 -p no:pytest_ansible"
-doctest_optionflags = "ALLOW_UNICODE ELLIPSIS"
-junit_suite_name = "molecule_test_suite"
-norecursedirs = ["dist", "doc", "build", ".tox", ".eggs", "src", "test/*/scenarios", "test/*/resources"]
+addopts = "-ra"
+testpaths = ["tests"]
+markers = [
+  "integration: tests the installed package and bundled resources",
+  "runtime: requires Docker or Podman and image/network access"
+]
 
 [tool.ruff]
 target-version = "py39"
