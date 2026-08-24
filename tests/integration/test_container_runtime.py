@@ -48,15 +48,26 @@ def test_container_driver_completes_molecule_lifecycle(driver_name, tmp_path):
     env = os.environ.copy()
     env.update({"ANSIBLE_FORCE_COLOR": "0", "MOLECULE_NO_LOG": "1"})
 
-    result = subprocess.run(
-        [molecule, "test", "--scenario-name", "default", "--destroy", "always"],
-        check=False,
-        capture_output=True,
-        cwd=project,
-        env=env,
-        text=True,
-        timeout=900,
-    )
+    try:
+        result = subprocess.run(
+            [molecule, "test", "--scenario-name", "default", "--destroy", "always"],
+            check=False,
+            capture_output=True,
+            cwd=project,
+            env=env,
+            text=True,
+            timeout=900,
+        )
+    finally:
+        subprocess.run(
+            [molecule, "destroy", "--scenario-name", "default"],
+            check=False,
+            capture_output=True,
+            cwd=project,
+            env=env,
+            text=True,
+            timeout=180,
+        )
 
     assert result.returncode == 0, (
         f"molecule test failed for {driver_name}\n"

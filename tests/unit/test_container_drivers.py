@@ -87,15 +87,21 @@ def test_docker_sanity_reports_daemon_failure(make_config, monkeypatch):
 
 
 def test_docker_reset_removes_owned_resources(make_config, monkeypatch):
+    container_list_calls = []
+    container_prune_calls = []
+    network_list_calls = []
     stopped = []
     removed = []
     container = SimpleNamespace(id="container-1", stop=lambda **kwargs: stopped.append(kwargs))
     network = SimpleNamespace(name="network-1", remove=lambda: removed.append("network-1"))
     containers = SimpleNamespace(
-        list=lambda **_kwargs: [container],
-        prune=lambda **_kwargs: {"ContainersDeleted": ["container-1"]},
+        list=lambda **kwargs: container_list_calls.append(kwargs) or [container],
+        prune=lambda **kwargs: container_prune_calls.append(kwargs)
+        or {"ContainersDeleted": ["container-1"]},
     )
-    networks = SimpleNamespace(list=lambda **_kwargs: [network])
+    networks = SimpleNamespace(
+        list=lambda **kwargs: network_list_calls.append(kwargs) or [network],
+    )
     fake_docker = SimpleNamespace(
         from_env=lambda: SimpleNamespace(containers=containers, networks=networks),
     )
@@ -103,6 +109,10 @@ def test_docker_reset_removes_owned_resources(make_config, monkeypatch):
 
     docker_driver.Docker(make_config()).reset()
 
+    owned_filter = {"filters": {"label": "owner=molecule"}}
+    assert container_list_calls == [owned_filter]
+    assert container_prune_calls == [owned_filter]
+    assert network_list_calls == [owned_filter]
     assert stopped == [{"timeout": 3}]
     assert removed == ["network-1"]
 
@@ -112,7 +122,6 @@ def test_podman_command_and_connection_options(make_config, monkeypatch):
     monkeypatch.setattr(podman_driver, "which", lambda executable: f"/usr/bin/{executable}")
     driver = podman_driver.Podman(make_config())
 
-    assert driver.podman_cmd == "/usr/bin/podman-remote"
     assert driver.podman_cmd == "/usr/bin/podman-remote"
     assert driver.login_cmd_template.startswith("/usr/bin/podman-remote exec")
     assert driver.login_options("node") == {"instance": "node"}

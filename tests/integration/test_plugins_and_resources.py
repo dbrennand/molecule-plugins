@@ -36,6 +36,12 @@ SCHEMAS = [
 PLAYBOOKS = sorted(PACKAGE_ROOT.glob("*/playbooks/**/*.yml"))
 
 
+def test_resource_inventory_is_complete():
+    assert len(COOKIECUTTER_ROOTS) == 8
+    assert {path.parents[1].name for path in COOKIECUTTER_ROOTS} == DRIVER_NAMES
+    assert len(PLAYBOOKS) == 21
+
+
 def test_package_registers_all_molecule_drivers():
     plugins = {
         plugin.name: plugin

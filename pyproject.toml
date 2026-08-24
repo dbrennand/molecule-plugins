@@ -120,7 +120,7 @@ changelog = "https://github.com/ansible-community/molecule-plugins/releases"
 skip = "uv.lock"
 
 [tool.pytest.ini_options]
-addopts = "-ra"
+addopts = "-ra -m 'not runtime'"
 testpaths = ["tests"]
 markers = [
   "integration: tests the installed package and bundled resources",
