@@ -26,6 +26,7 @@ def test_ssh_driver_metadata_and_templates(
     driver_class,
     expected_name,
 ):
+    """Verify shared SSH driver metadata and login template contracts."""
     config = make_config(
         command_args={"host": "node"},
         config_data={"driver": {"ssh_connection_options": ["-o TestOption=yes"]}},
@@ -50,6 +51,7 @@ def test_ssh_driver_reads_linux_instance_config(
     driver_class,
     expected_name,
 ):
+    """Verify shared SSH drivers read Linux instance configuration."""
     instance = {
         "address": "192.0.2.10",
         "identity_file": "/tmp/id_test",
@@ -82,6 +84,7 @@ def test_ssh_driver_returns_no_connection_before_provisioning(
     expected_name,
     error,
 ):
+    """Verify shared SSH drivers return no options before provisioning."""
     driver = driver_class(make_config())
 
     def fail(_instance_name):
@@ -94,6 +97,7 @@ def test_ssh_driver_returns_no_connection_before_provisioning(
 
 
 def test_gce_builds_windows_connection(make_config, monkeypatch):
+    """Verify GCE builds WinRM connection options for Windows."""
     instance = {
         "address": "192.0.2.20",
         "instance": "windows",
@@ -122,6 +126,7 @@ def test_ec2_applies_platform_overrides_and_fetches_password(
     make_config,
     monkeypatch,
 ):
+    """Verify EC2 applies platform overrides and fetches a password."""
     instance = {
         "address": "192.0.2.30",
         "identity_file": "/tmp/id_test",
@@ -166,6 +171,7 @@ def test_ec2_login_selects_host(
     platforms,
     expected_host,
 ):
+    """Verify EC2 login selects the explicit or sole platform host."""
     selected = []
     driver = EC2(make_config(command_args=command_args, platforms=platforms))
 
@@ -180,7 +186,28 @@ def test_ec2_login_selects_host(
 
 
 def test_ec2_login_rejects_ambiguous_host(make_config):
+    """Verify EC2 rejects login when multiple hosts are ambiguous."""
     driver = EC2(make_config(platforms=[{"name": "one"}, {"name": "two"}]))
 
     with pytest.raises(SystemExit, match="1"):
         _ = driver.login_cmd_template
+
+
+def test_cloud_driver_required_collections(make_config):
+    """Verify cloud drivers expose their source-declared collections."""
+    assert GCE(make_config()).required_collections == {
+        "google.cloud": "1.0.2",
+        "community.crypto": "1.8.0",
+    }
+    assert Openstack(make_config()).required_collections == {
+        "openstack.cloud": "2.1.0",
+    }
+
+    for driver_class in (Azure, EC2, Vagrant):
+        collections = driver_class(make_config()).required_collections
+        assert isinstance(collections, dict)
+        if collections:
+            assert all(
+                isinstance(name, str) and isinstance(version, str)
+                for name, version in collections.items()
+            )
