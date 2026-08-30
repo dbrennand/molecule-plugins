@@ -66,24 +66,48 @@ def test_azure_playbooks_emit_instance_config_and_pair_resource_group():
         ),
         render_outer=True,
     )
-    instance = _first_mapping(create, {"instance", "address", "user", "port", "identity_file"})
+    instance = _first_mapping(
+        create, {"instance", "address", "user", "port", "identity_file"}
+    )
     assert set(instance) >= {"instance", "address", "user", "port", "identity_file"}
-    assert "resource_group_name: molecule" in _resource(
-        "azure", "cookiecutter", "{{cookiecutter.molecule_directory}}", "{{cookiecutter.scenario_name}}", "create.yml"
-    ).read_text()
-    assert "resource_group_name: molecule" in _resource(
-        "azure", "cookiecutter", "{{cookiecutter.molecule_directory}}", "{{cookiecutter.scenario_name}}", "destroy.yml"
-    ).read_text()
+    assert (
+        "resource_group_name: molecule"
+        in _resource(
+            "azure",
+            "cookiecutter",
+            "{{cookiecutter.molecule_directory}}",
+            "{{cookiecutter.scenario_name}}",
+            "create.yml",
+        ).read_text()
+    )
+    assert (
+        "resource_group_name: molecule"
+        in _resource(
+            "azure",
+            "cookiecutter",
+            "{{cookiecutter.molecule_directory}}",
+            "{{cookiecutter.scenario_name}}",
+            "destroy.yml",
+        ).read_text()
+    )
     assert _first_mapping(destroy, {"instance_conf"})["instance_conf"] == {}
 
 
 def test_ec2_playbooks_persist_run_and_instance_config_contracts():
     """Verify EC2 persists run identity and instance IDs for cleanup."""
     create_path = _resource(
-        "ec2", "cookiecutter", "{{cookiecutter.molecule_directory}}", "{{cookiecutter.scenario_name}}", "create.yml"
+        "ec2",
+        "cookiecutter",
+        "{{cookiecutter.molecule_directory}}",
+        "{{cookiecutter.scenario_name}}",
+        "create.yml",
     )
     destroy_path = _resource(
-        "ec2", "cookiecutter", "{{cookiecutter.molecule_directory}}", "{{cookiecutter.scenario_name}}", "destroy.yml"
+        "ec2",
+        "cookiecutter",
+        "{{cookiecutter.molecule_directory}}",
+        "{{cookiecutter.scenario_name}}",
+        "destroy.yml",
     )
     create = _load_yaml(create_path, render_outer=True)
     instance = _first_mapping(
@@ -108,12 +132,20 @@ def test_gce_handlers_keep_linux_and_windows_connection_contracts():
     handlers = _load_yaml(_resource("gce", "playbooks", "handlers", "main.yml"))
     linux_task = next(task for task in handlers if "Linux" in task["name"])
     windows_task = next(task for task in handlers if "Windows" in task["name"])
-    linux = _first_mapping(linux_task, {"instance", "address", "user", "port", "identity_file"})
-    windows = _first_mapping(windows_task, {"instance", "address", "user", "password", "port"})
+    linux = _first_mapping(
+        linux_task, {"instance", "address", "user", "port", "identity_file"}
+    )
+    windows = _first_mapping(
+        windows_task, {"instance", "address", "user", "password", "port"}
+    )
     assert linux["instance_os_type"] == "{{ molecule_yml.driver.instance_os_type }}"
     assert windows["instance_os_type"] == "{{ molecule_yml.driver.instance_os_type }}"
     assert "identity_file" in linux
-    assert {"password", "winrm_transport", "winrm_server_cert_validation"} <= windows.keys()
+    assert {
+        "password",
+        "winrm_transport",
+        "winrm_server_cert_validation",
+    } <= windows.keys()
     create = _resource("gce", "playbooks", "create.yml").read_text()
     assert "include_tasks: tasks/create_linux_instance.yml" in create
     assert "include_tasks: tasks/create_windows_instance.yml" in create
@@ -143,7 +175,9 @@ def test_openstack_address_selection_and_instance_config_contract():
     path = _resource("openstack", "playbooks", "tasks", "server_addr.yml")
     source = path.read_text()
     document = _load_yaml(path)
-    instance = _first_mapping(document, {"instance", "address", "user", "port", "identity_file"})
+    instance = _first_mapping(
+        document, {"instance", "address", "user", "port", "identity_file"}
+    )
     assert set(instance) >= {"instance", "address", "user", "port", "identity_file"}
     assert source.index("item.access_ipv4") < source.index("item.access_ipv6")
     assert source.index("item.access_ipv6") < source.index("'floating'")
@@ -164,7 +198,9 @@ def test_openstack_create_destroy_pair_uuid_resource_identity():
 def test_vagrant_create_maps_module_result_to_instance_config():
     """Verify Vagrant maps server result fields into Molecule instance data."""
     document = _load_yaml(_resource("vagrant", "playbooks", "create.yml"))
-    instance = _first_mapping(document, {"instance", "address", "user", "port", "identity_file"})
+    instance = _first_mapping(
+        document, {"instance", "address", "user", "port", "identity_file"}
+    )
     assert instance == {
         "instance": "{{ item.Host }}",
         "address": "{{ item.HostName }}",

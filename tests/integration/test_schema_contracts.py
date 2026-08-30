@@ -29,15 +29,22 @@ def _supported_names(schema):
 
 def _document(driver_name, platform=None):
     """Build a schema document containing a driver and platform list."""
-    return {"driver": {"name": driver_name}, "platforms": [platform or {"name": "instance"}]}
+    return {
+        "driver": {"name": driver_name},
+        "platforms": [platform or {"name": "instance"}],
+    }
 
 
 SCHEMA_CASES = tuple(
-    pytest.param(schema_file, _load_schema(schema_file), id=schema_file.parent.parent.name)
+    pytest.param(
+        schema_file, _load_schema(schema_file), id=schema_file.parent.parent.name
+    )
     for schema_file in SCHEMA_FILES
 )
 SUPPORTED_NAME_CASES = tuple(
-    pytest.param(schema_file, driver_name, id=f"{schema_file.parent.parent.name}-{driver_name}")
+    pytest.param(
+        schema_file, driver_name, id=f"{schema_file.parent.parent.name}-{driver_name}"
+    )
     for schema_file in SCHEMA_FILES
     for driver_name in _supported_names(_load_schema(schema_file))
 )
@@ -76,17 +83,45 @@ def test_driver_schemas_reject_unsupported_names_with_platforms(schema_file):
     [
         pytest.param(
             SCHEMA_ROOT / "docker/schema/driver.json",
-            _document("docker", {"name": "docker-representative", "cgroupns_mode": "private", "shm_size": "64M", "docker_networks": [{"name": "molecule"}], "restart_policy": "unless-stopped"}),
+            _document(
+                "docker",
+                {
+                    "name": "docker-representative",
+                    "cgroupns_mode": "private",
+                    "shm_size": "64M",
+                    "docker_networks": [{"name": "molecule"}],
+                    "restart_policy": "unless-stopped",
+                },
+            ),
             id="docker-representative",
         ),
         pytest.param(
             SCHEMA_ROOT / "podman/schema/driver.json",
-            _document("podman", {"name": "podman-representative", "rootless": True, "cgroup_manager": "systemd", "systemd": "always", "extra_opts": ["--log-level=debug"]}),
+            _document(
+                "podman",
+                {
+                    "name": "podman-representative",
+                    "rootless": True,
+                    "cgroup_manager": "systemd",
+                    "systemd": "always",
+                    "extra_opts": ["--log-level=debug"],
+                },
+            ),
             id="podman-representative",
         ),
         pytest.param(
             SCHEMA_ROOT / "containers/schema/driver.json",
-            _document("containers", {"name": "containers-portable", "command": "sleep infinity", "restart_policy": "on-failure", "registry": {"credentials": {"username": "user", "password": "secret"}}}),
+            _document(
+                "containers",
+                {
+                    "name": "containers-portable",
+                    "command": "sleep infinity",
+                    "restart_policy": "on-failure",
+                    "registry": {
+                        "credentials": {"username": "user", "password": "secret"}
+                    },
+                },
+            ),
             id="containers-portable",
         ),
     ],
@@ -101,12 +136,46 @@ def test_driver_schemas_accept_representative_platforms(schema_file, document):
 @pytest.mark.parametrize(
     ("schema_file", "document"),
     [
-        pytest.param(SCHEMA_ROOT / "docker/schema/driver.json", _document("docker", {"name": "docker-invalid", "systemd": "always"}), id="docker-rejects-podman-systemd"),
-        pytest.param(SCHEMA_ROOT / "podman/schema/driver.json", _document("podman", {"name": "podman-invalid", "docker_networks": []}), id="podman-rejects-docker-networks"),
-        pytest.param(SCHEMA_ROOT / "containers/schema/driver.json", _document("containers", {"name": "containers-invalid", "docker_networks": []}), id="containers-rejects-docker-networks"),
-        pytest.param(SCHEMA_ROOT / "containers/schema/driver.json", _document("containers", {"name": "containers-invalid", "systemd": "always"}), id="containers-rejects-podman-systemd"),
-        pytest.param(SCHEMA_ROOT / "containers/schema/driver.json", _document("containers", {"name": "containers-invalid", "command": ["sleep", "infinity"]}), id="containers-rejects-list-command"),
-        pytest.param(SCHEMA_ROOT / "containers/schema/driver.json", _document("containers", {"name": "containers-invalid", "restart_policy": "unless-stopped"}), id="containers-rejects-unless-stopped"),
+        pytest.param(
+            SCHEMA_ROOT / "docker/schema/driver.json",
+            _document("docker", {"name": "docker-invalid", "systemd": "always"}),
+            id="docker-rejects-podman-systemd",
+        ),
+        pytest.param(
+            SCHEMA_ROOT / "podman/schema/driver.json",
+            _document("podman", {"name": "podman-invalid", "docker_networks": []}),
+            id="podman-rejects-docker-networks",
+        ),
+        pytest.param(
+            SCHEMA_ROOT / "containers/schema/driver.json",
+            _document(
+                "containers", {"name": "containers-invalid", "docker_networks": []}
+            ),
+            id="containers-rejects-docker-networks",
+        ),
+        pytest.param(
+            SCHEMA_ROOT / "containers/schema/driver.json",
+            _document(
+                "containers", {"name": "containers-invalid", "systemd": "always"}
+            ),
+            id="containers-rejects-podman-systemd",
+        ),
+        pytest.param(
+            SCHEMA_ROOT / "containers/schema/driver.json",
+            _document(
+                "containers",
+                {"name": "containers-invalid", "command": ["sleep", "infinity"]},
+            ),
+            id="containers-rejects-list-command",
+        ),
+        pytest.param(
+            SCHEMA_ROOT / "containers/schema/driver.json",
+            _document(
+                "containers",
+                {"name": "containers-invalid", "restart_policy": "unless-stopped"},
+            ),
+            id="containers-rejects-unless-stopped",
+        ),
     ],
 )
 def test_driver_schemas_reject_driver_specific_invalid_platforms(schema_file, document):

@@ -222,6 +222,7 @@ commands = [
 skip_install = true
 dependency_groups = ["pkg"]
 runner = "uv-venv-lock-runner"
+allowlist_externals = ["bash"]
 commands = [
   ["bash", "-c", "rm -rf {tox_root}/dist/ && mkdir -p {tox_root}/dist/"],
   ["python", "-m", "build"],
