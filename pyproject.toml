@@ -120,7 +120,7 @@ changelog = "https://github.com/ansible-community/molecule-plugins/releases"
 skip = "uv.lock"
 
 [tool.pytest.ini_options]
-addopts = "-ra -m 'not runtime'"
+addopts = "-ra -m 'not runtime' --strict-config --strict-markers"
 testpaths = ["tests"]
 markers = [
   "integration: tests the installed package and bundled resources",
@@ -176,6 +176,7 @@ lint.ignore = [
   "TRY"
 ]
 lint.select = ["ALL"]
+lint.pydocstyle.convention = "google"
 
 [tool.setuptools_scm]
 local_scheme = "no-local-version"
@@ -198,7 +199,8 @@ isolated_build = true
 
 [tool.tox.env.devel]
 deps = [
-  "git+https://github.com/ansible-community/molecule.git@main#egg=molecule[test]"
+  "git+https://github.com/ansible-community/molecule.git@main#egg=molecule[test]",
+  "pytest>=8.3.5"
 ]
 description = "Run the tests with newest dependencies (no lock and allowing prereleases)"
 runner = "uv-venv-runner"

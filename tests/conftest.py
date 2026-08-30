@@ -10,6 +10,7 @@ def make_config(tmp_path):
     """Build the smallest configuration object required by the drivers."""
 
     def _make_config(*, command_args=None, platforms=None, config_data=None):
+        """Create a driver configuration with optional command and platform data."""
         ephemeral_directory = str(tmp_path / "ephemeral")
         driver_data = {
             "name": "unused",
