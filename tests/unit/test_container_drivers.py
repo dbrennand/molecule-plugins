@@ -30,6 +30,7 @@ def raise_exit(message, **_kwargs):
 
 
 def test_docker_connection_options_and_resources(make_config, monkeypatch):
+    """Verify Docker connection settings and required resources."""
     driver = docker_driver.Docker(make_config())
 
     assert "docker exec" in driver.login_cmd_template
@@ -53,6 +54,7 @@ def test_docker_connection_options_and_resources(make_config, monkeypatch):
 
 
 def test_docker_sanity_checks_daemon_once(make_config, monkeypatch):
+    """Verify Docker sanity checks ping the daemon only once."""
     calls = []
     client = SimpleNamespace(ping=lambda: calls.append("ping"))
     fake_docker = SimpleNamespace(
@@ -70,7 +72,10 @@ def test_docker_sanity_checks_daemon_once(make_config, monkeypatch):
 
 
 def test_docker_sanity_reports_daemon_failure(make_config, monkeypatch):
+    """Verify Docker daemon failures produce a helpful exit message."""
+
     def from_env():
+        """Raise the simulated daemon connection failure."""
         error = RuntimeError("offline")
         raise error
 
@@ -87,6 +92,7 @@ def test_docker_sanity_reports_daemon_failure(make_config, monkeypatch):
 
 
 def test_docker_reset_removes_owned_resources(make_config, monkeypatch):
+    """Verify Docker reset removes only Molecule-owned resources."""
     container_list_calls = []
     container_prune_calls = []
     network_list_calls = []
@@ -122,6 +128,7 @@ def test_docker_reset_removes_owned_resources(make_config, monkeypatch):
 
 
 def test_podman_command_and_connection_options(make_config, monkeypatch):
+    """Verify Podman commands, connection settings, and resources."""
     monkeypatch.setenv("MOLECULE_PODMAN_EXECUTABLE", "podman-remote")
     monkeypatch.setattr(
         podman_driver, "which", lambda executable: f"/usr/bin/{executable}"
@@ -141,7 +148,26 @@ def test_podman_command_and_connection_options(make_config, monkeypatch):
     assert Path(schema_file).is_file()
 
 
+@pytest.mark.parametrize(
+    ("driver_class", "driver_name"),
+    [
+        pytest.param(docker_driver.Docker, "docker", id="docker"),
+        pytest.param(podman_driver.Podman, "podman", id="podman"),
+        pytest.param(Container, "containers", id="containers"),
+    ],
+)
+def test_container_driver_schema_file_has_owned_path(
+    make_config, driver_class, driver_name
+):
+    """Verify each container driver's schema path belongs to that driver."""
+    schema_file = driver_class(make_config()).schema_file()
+
+    assert schema_file is not None
+    assert Path(schema_file).parts[-3:] == (driver_name, "schema", "driver.json")
+
+
 def test_podman_command_reports_missing_executable(make_config, monkeypatch):
+    """Verify a missing Podman executable produces a clear exit message."""
     monkeypatch.setattr(podman_driver, "which", lambda _executable: None)
     monkeypatch.setattr(podman_driver.util, "sysexit_with_message", raise_exit)
 
@@ -165,6 +191,7 @@ def test_podman_sanity_compatibility(
     warning,
     error,
 ):
+    """Verify Podman sanity checks handle supported and incompatible versions."""
     runtime = SimpleNamespace(
         config=SimpleNamespace(ansible_pipelining=pipelining),
         version=Version(version),
@@ -185,6 +212,7 @@ def test_podman_sanity_compatibility(
 
 
 def test_podman_reset_removes_owned_containers(make_config, monkeypatch):
+    """Verify Podman reset removes Molecule-owned containers."""
     commands = []
     app = SimpleNamespace(run_command=lambda command: commands.append(command))
     monkeypatch.setattr(podman_driver, "which", lambda _executable: "/usr/bin/podman")
@@ -198,6 +226,7 @@ def test_podman_reset_removes_owned_containers(make_config, monkeypatch):
 
 
 def test_podman_reset_skips_missing_executable(make_config, monkeypatch):
+    """Verify Podman reset skips cleanup when the executable is unavailable."""
     monkeypatch.setattr(podman_driver, "which", lambda _executable: None)
     monkeypatch.setattr(
         podman_driver,
@@ -209,6 +238,7 @@ def test_podman_reset_skips_missing_executable(make_config, monkeypatch):
 
 
 def test_containers_uses_selected_backend_resources(make_config):
+    """Verify the container driver exposes the selected backend resources."""
     driver = Container(make_config())
 
     assert driver.name == "containers"
@@ -221,8 +251,6 @@ def test_containers_uses_selected_backend_resources(make_config):
     }
     schema_file = driver.schema_file()
     assert schema_file is not None
-    assert Path(schema_file).parent.name == "schema"
-    assert Path(schema_file).parent.parent.name == "containers"
 
 
 @pytest.mark.parametrize(
@@ -233,6 +261,7 @@ def test_containers_uses_selected_backend_resources(make_config):
     ],
 )
 def test_containers_selects_requested_backend(tmp_path, backend, expected_base):
+    """Verify the container driver selects the backend requested by its environment."""
     executable = tmp_path / backend
     executable.write_text("#!/bin/sh\n", encoding="utf-8")
     executable.chmod(0o755)
@@ -257,6 +286,7 @@ def test_containers_selects_requested_backend(tmp_path, backend, expected_base):
 
 
 def test_containers_rejects_unsupported_backend(tmp_path):
+    """Verify importing an unsupported container backend fails clearly."""
     executable = tmp_path / "unsupported"
     executable.write_text("#!/bin/sh\n", encoding="utf-8")
     executable.chmod(0o755)
@@ -277,6 +307,7 @@ def test_containers_rejects_unsupported_backend(tmp_path):
 
 
 def test_openstack_sanity_checks_dependency(make_config, monkeypatch):
+    """Verify OpenStack sanity checks require the OpenStack SDK."""
     driver = openstack_driver.Openstack(make_config())
     monkeypatch.setattr(driver, "_is_module_installed", lambda _module: True)
     driver.sanity_checks()
@@ -288,6 +319,7 @@ def test_openstack_sanity_checks_dependency(make_config, monkeypatch):
 
 
 def test_vagrant_sanity_checks_executable(make_config, monkeypatch):
+    """Verify Vagrant sanity checks require an executable in PATH."""
     driver = vagrant_driver.Vagrant(make_config())
     monkeypatch.setattr(vagrant_driver, "which", lambda _executable: "/usr/bin/vagrant")
     driver.sanity_checks()
