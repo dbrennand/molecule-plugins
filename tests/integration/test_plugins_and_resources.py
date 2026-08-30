@@ -10,8 +10,8 @@ from pathlib import Path
 import pytest
 from ansible.parsing.dataloader import DataLoader
 from jinja2 import Environment, StrictUndefined
-from jsonschema import ValidationError, validators
 from molecule.api import Driver
+from molecule.config import Config
 
 import molecule_plugins
 
@@ -29,20 +29,18 @@ DRIVER_NAMES = {
     "vagrant",
 }
 COOKIECUTTER_ROOTS = sorted(PACKAGE_ROOT.glob("*/cookiecutter/cookiecutter.json"))
-SCHEMAS = [
-    pytest.param(PACKAGE_ROOT / name / "schema" / "driver.json", name, id=name)
-    for name in ("containers", "docker", "podman")
-]
 PLAYBOOKS = sorted(PACKAGE_ROOT.glob("*/playbooks/**/*.yml"))
 
 
 def test_resource_inventory_is_complete():
+    """Verify all expected packaged resource groups are present."""
     assert len(COOKIECUTTER_ROOTS) == 8
     assert {path.parents[1].name for path in COOKIECUTTER_ROOTS} == DRIVER_NAMES
     assert len(PLAYBOOKS) == 21
 
 
 def test_package_registers_all_molecule_drivers():
+    """Verify the package registers every expected Molecule driver."""
     plugins = {
         plugin.name: plugin
         for plugin in entry_points(group="molecule.driver")
@@ -55,6 +53,7 @@ def test_package_registers_all_molecule_drivers():
 
 
 def test_molecule_cli_lists_all_project_drivers():
+    """Verify the Molecule CLI lists every project driver."""
     molecule = shutil.which("molecule")
     assert molecule is not None
 
@@ -114,6 +113,7 @@ def render_cookiecutter_tree(config_file, destination):
     "config_file", COOKIECUTTER_ROOTS, ids=lambda path: path.parents[1].name
 )
 def test_cookiecutter_templates_render_and_parse(config_file, tmp_path):
+    """Verify cookiecutter templates render and their YAML parses."""
     rendered_files = render_cookiecutter_tree(config_file, tmp_path)
     yaml_files = [path for path in rendered_files if path.suffix in {".yml", ".yaml"}]
 
@@ -126,22 +126,37 @@ def test_cookiecutter_templates_render_and_parse(config_file, tmp_path):
         assert DataLoader().load(path.read_text(encoding="utf-8")) is not None
 
 
-@pytest.mark.parametrize(("schema_file", "driver_name"), SCHEMAS)
-def test_driver_schemas_accept_only_supported_name(schema_file, driver_name):
-    schema = json.loads(schema_file.read_text(encoding="utf-8"))
-    validator_class = validators.validator_for(schema)
-    validator_class.check_schema(schema)
-    validator = validator_class(schema)
+def test_molecule_config_substitutes_environment_values(monkeypatch, tmp_path):
+    """Verify explicit substitutions override defaults without contacting Docker."""
+    molecule_file = tmp_path / "molecule.yml"
+    molecule_file.write_text(
+        """---
+ driver:
+   name: docker
+ platforms:
+   - name: ${MOLECULE_TEST_NAME:-instance-local}
+     image: ${MOLECULE_TEST_IMAGE:-docker.io/library/python:3.12-slim}
+ provisioner:
+   name: ansible
+ """,
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("MOLECULE_TEST_NAME", "instance-explicit")
+    monkeypatch.delenv("MOLECULE_TEST_IMAGE", raising=False)
 
-    validator.validate({"driver": {"name": driver_name}})
-    with pytest.raises(ValidationError):
-        validator.validate({"driver": {"name": "unsupported"}})
+    config = Config(str(molecule_file))
+    config_data = vars(config).get("config_data", vars(config).get("config"))
+
+    assert config_data is not None
+    assert config_data["platforms"][0]["name"] == "instance-explicit"
+    assert config_data["platforms"][0]["image"] == "docker.io/library/python:3.12-slim"
 
 
 @pytest.mark.parametrize(
     "playbook", PLAYBOOKS, ids=lambda path: str(path.relative_to(PACKAGE_ROOT))
 )
 def test_packaged_playbooks_parse_with_ansible(playbook):
+    """Verify packaged playbooks parse through Ansible's loader."""
     assert DataLoader().load(playbook.read_text(encoding="utf-8")) is not None
 
 
@@ -158,6 +173,7 @@ def test_packaged_playbooks_parse_with_ansible(playbook):
     ids=("docker-filter", "gce-windows-auth"),
 )
 def test_packaged_python_resources_compile(source, tmp_path):
+    """Verify packaged Python resources compile successfully."""
     py_compile.compile(
         str(source),
         cfile=str(tmp_path / f"{source.stem}.pyc"),

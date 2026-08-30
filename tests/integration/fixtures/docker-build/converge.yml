@@ -1,0 +1,8 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Confirm the instance is available
+      ansible.builtin.debug:
+        msg: container reached
