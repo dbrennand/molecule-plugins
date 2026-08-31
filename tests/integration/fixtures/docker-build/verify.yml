@@ -1,0 +1,13 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check the custom build sentinel
+      ansible.builtin.stat:
+        path: /sentinel.txt
+      register: sentinel
+    - name: Assert the custom context was copied
+      ansible.builtin.assert:
+        that:
+          - sentinel.stat.exists

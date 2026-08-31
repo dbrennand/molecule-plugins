@@ -8,8 +8,7 @@ build-backend = "setuptools.build_meta"
 [dependency-groups]
 dev = [
   "bindep>=2.13.0",
-  "molecule[test]>=25.1.0",
-  "pytest-helpers-namespace>=2019.1.8"
+  "molecule[test]>=25.1.0"
 ]
 docker = [
   "docker>=4.3.1",
@@ -121,10 +120,12 @@ changelog = "https://github.com/ansible-community/molecule-plugins/releases"
 skip = "uv.lock"
 
 [tool.pytest.ini_options]
-addopts = "-v -rxXs --doctest-modules --durations 10 -p no:pytest_ansible"
-doctest_optionflags = "ALLOW_UNICODE ELLIPSIS"
-junit_suite_name = "molecule_test_suite"
-norecursedirs = ["dist", "doc", "build", ".tox", ".eggs", "src", "test/*/scenarios", "test/*/resources"]
+addopts = "-ra -m 'not runtime' --strict-config --strict-markers"
+testpaths = ["tests"]
+markers = [
+  "integration: tests the installed package and bundled resources",
+  "runtime: requires Docker or Podman and image/network access"
+]
 
 [tool.ruff]
 target-version = "py39"
@@ -175,6 +176,7 @@ lint.ignore = [
   "TRY"
 ]
 lint.select = ["ALL"]
+lint.pydocstyle.convention = "google"
 
 [tool.setuptools_scm]
 local_scheme = "no-local-version"
@@ -197,7 +199,8 @@ isolated_build = true
 
 [tool.tox.env.devel]
 deps = [
-  "git+https://github.com/ansible-community/molecule.git@main#egg=molecule[test]"
+  "git+https://github.com/ansible-community/molecule.git@main#egg=molecule[test]",
+  "pytest>=8.3.5"
 ]
 description = "Run the tests with newest dependencies (no lock and allowing prereleases)"
 runner = "uv-venv-runner"
@@ -212,15 +215,14 @@ runner = "uv-venv-lock-runner"
 skip_install = false
 commands_pre = []
 commands = [
-  ["prek", "run", "-a"],
-  ["bash", "{tox_root}/tools/generate-templates.sh"],
-  ["rm", "-rf", "test/roles"]
+  ["prek", "run", "-a"]
 ]
 
 [tool.tox.env.pkg]
 skip_install = true
 dependency_groups = ["pkg"]
 runner = "uv-venv-lock-runner"
+allowlist_externals = ["bash"]
 commands = [
   ["bash", "-c", "rm -rf {tox_root}/dist/ && mkdir -p {tox_root}/dist/"],
   ["python", "-m", "build"],
@@ -231,10 +233,6 @@ commands = [
 description = "Unit testing"
 skip_install = false
 runner = "uv-venv-lock-runner"
-allowlist_externals = [
-  "bash",
-  "rm"
-]
 extras = [
   "azure",
   "docker",
@@ -245,9 +243,7 @@ extras = [
   "vagrant"
 ]
 commands = [
-  ["ansible-galaxy", "install", "-r", "requirements.yml"],
-  ["pytest", "--collect-only"],
-  ["pytest", "--color=yes", "{tty:-s}"]
+  ["pytest", "-m", "not runtime", "--color=yes", "{tty:-s}"]
 ]
 pass_env = [
   "CI",
@@ -263,8 +259,6 @@ pass_env = [
 
 [tool.tox.env_run_base.set_env]
 ANSIBLE_FORCE_COLOR = "{env:ANSIBLE_FORCE_COLOR:1}"
-ANSIBLE_INVENTORY = "{tox_root}/tests/hosts.ini"
-ANSIBLE_CONFIG = "{tox_root}/ansible.cfg"
 ANSIBLE_NOCOWS = "1"
 ANSIBLE_RETRY_FILES_ENABLED = "0"
 ANSIBLE_VERBOSITY = "{env:ANSIBLE_VERBOSITY:0}"
@@ -272,8 +266,6 @@ MOLECULE_NO_LOG = "{env:MOLECULE_NO_LOG:0}"
 PIP_DISABLE_PIP_VERSION_CHECK = "1"
 PY_COLORS = "{env:PY_COLORS:1}"
 PYTHONDONTWRITEBYTECODE = "1"
-MOLECULE_OPTS = "--destroy always"
-TESTBOX = "{env:TESTBOX:testbox}"
 
 [tool.uv]
 default-groups = ["dev", "lint", "pkg"]

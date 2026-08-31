@@ -1114,8 +1114,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
   {name = "bindep"},
-  {name = "molecule", extra = ["test"]},
-  {name = "pytest-helpers-namespace"}
+  {name = "molecule", extra = ["test"]}
 ]
 docker = [
   {name = "docker"},
@@ -1154,8 +1153,7 @@ provides-extras = ["azure", "docker", "ec2", "gce", "podman", "selinux", "vagran
 [package.metadata.requires-dev]
 dev = [
   {name = "bindep", specifier = ">=2.13.0"},
-  {name = "molecule", extras = ["test"], specifier = ">=25.1.0"},
-  {name = "pytest-helpers-namespace", specifier = ">=2019.1.8"}
+  {name = "molecule", extras = ["test"], specifier = ">=25.1.0"}
 ]
 docker = [
   {name = "docker", specifier = ">=4.3.1"},
@@ -1624,18 +1622,6 @@ dependencies = [
 sdist = {url = "https://files.pythonhosted.org/packages/a3/5c/00a0e072241553e1a7496d638deababa67c5058571567b92a7eaa258397c/pytest-8.4.2.tar.gz", hash = "sha256:86c0d0b93306b961d58d62a4db4879f27fe25513d4b969df351abdddb3c30e01", size = 1519618, upload-time = "2025-09-04T14:34:22.711Z"}
 wheels = [
   {url = "https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl", hash = "sha256:872f880de3fc3a5bdc88a11b39c9710c3497a547cfa9320bc3c5e62fbf272e79", size = 365750, upload-time = "2025-09-04T14:34:20.226Z"}
-]
-
-[[package]]
-name = "pytest-helpers-namespace"
-version = "2021.12.29"
-source = {registry = "https://pypi.org/simple"}
-dependencies = [
-  {name = "pytest"}
-]
-sdist = {url = "https://files.pythonhosted.org/packages/e8/61/7f1a476b375c1238d152c164f7ffb694c662da8247816947be84b5fe2e8a/pytest-helpers-namespace-2021.12.29.tar.gz", hash = "sha256:792038247e0021beb966a7ea6e3a70ff5fcfba77eb72c6ec8fd6287af871c35b", size = 53355, upload-time = "2021-12-29T22:00:37.27Z"}
-wheels = [
-  {url = "https://files.pythonhosted.org/packages/63/a7/34844a563c425962658f093b359636deefd19eab6783896e0d378dae88a1/pytest_helpers_namespace-2021.12.29-py3-none-any.whl", hash = "sha256:d5c0262642998437a73d85cb6ae0db57d574facc551c4a4695e92ec50469eb98", size = 10501, upload-time = "2021-12-29T22:00:35.614Z"}
 ]
 
 [[package]]

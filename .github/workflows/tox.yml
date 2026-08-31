@@ -41,5 +41,4 @@ jobs:
         py311
         py312
         py313
-      run_pre: ./tools/test-setup.sh
       skip_explode: "1"

@@ -5,7 +5,6 @@ exclude_paths:
   - .github/
   - requirements.yml
   - src/**/cookiecutter/{{*
-  - test/roles/ # generated and untracked
 
 skip_list:
   # Temporary skips made during migration

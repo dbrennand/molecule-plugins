@@ -1,0 +1,14 @@
+---
+driver:
+  name: __DRIVER__
+platforms:
+  - name: instance
+    image: molecule-local/docker-build-context
+    dockerfile: Dockerfile.j2
+    pre_build_image: false
+provisioner:
+  name: ansible
+  inventory:
+    host_vars:
+      instance:
+        ansible_python_interpreter: /usr/local/bin/python3
